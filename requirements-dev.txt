@@ -1,0 +1,2 @@
+-r requirements-cad.txt
+pytest>=7,<10

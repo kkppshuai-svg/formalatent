@@ -1,0 +1,37 @@
+{
+  "sampleCount": 12,
+  "features": 44,
+  "method": "Three fixed seeds; identical validation IDs; raw descriptor MSE. Baseline normalization includes validation data. Retrieval queries are 3% descriptor noise, not independent semantic labels. Timing is local, warmed NumPy; batching vs repeated single-row legacy calls.",
+  "results": [
+    {
+      "seed": 11,
+      "baselineValidationRawMse": 40.09782429751741,
+      "upgradedValidationRawMse": 48.60731743019012,
+      "baselineNoisyIdentityRecallAt1": 1.0,
+      "upgradedNoisyIdentityRecallAt1": 1.0,
+      "baselineTrainSeconds": 0.027288391999945816,
+      "upgradedTrainSeconds": 0.06492614700005106,
+      "batchEncodeSpeedup": 150.40757541240018
+    },
+    {
+      "seed": 42,
+      "baselineValidationRawMse": 42.39425472799829,
+      "upgradedValidationRawMse": 60.00249231411035,
+      "baselineNoisyIdentityRecallAt1": 1.0,
+      "upgradedNoisyIdentityRecallAt1": 1.0,
+      "baselineTrainSeconds": 0.016088652999997066,
+      "upgradedTrainSeconds": 0.018580275999966034,
+      "batchEncodeSpeedup": 152.1842006609394
+    },
+    {
+      "seed": 73,
+      "baselineValidationRawMse": 42.84343338429685,
+      "upgradedValidationRawMse": 24.43567760740574,
+      "baselineNoisyIdentityRecallAt1": 1.0,
+      "upgradedNoisyIdentityRecallAt1": 1.0,
+      "baselineTrainSeconds": 0.01715622100005021,
+      "upgradedTrainSeconds": 0.020234035999919797,
+      "batchEncodeSpeedup": 151.1867662697245
+    }
+  ]
+}
