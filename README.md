@@ -1,8 +1,10 @@
-# AI-CAD VAE
+# FormaLatent · 形潜
 
-**面向 CAD 几何描述的变分自编码器训练与检索工具。**
+**面向 CAD 几何的潜空间学习与检索。**
 
-AI-CAD VAE 从 STEP 模型提取几何统计特征，提供模型训练、批量编码、描述向量重建及相似样本检索。项目采用 Python 与 NumPy 实现，可独立于 AI-CAD Web 服务运行；STEP 特征提取依赖 CadQuery。
+*Part of AI-CAD*
+
+FormaLatent 从 STEP 模型提取几何统计特征，提供模型训练、批量编码、描述向量重建及相似样本检索。项目采用 Python 与 NumPy 实现，可独立于 AI-CAD Web 服务运行；STEP 特征提取依赖 CadQuery。
 
 | 项目 | 说明 |
 | --- | --- |
@@ -28,8 +30,8 @@ AI-CAD VAE 从 STEP 模型提取几何统计特征，提供模型训练、批量
 ### 1. 安装
 
 ```bash
-git clone https://github.com/kkppshuai-svg/aicad-vae.git
-cd aicad-vae
+git clone https://github.com/kkppshuai-svg/formalatent.git
+cd formalatent
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
