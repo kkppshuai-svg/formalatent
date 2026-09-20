@@ -1,66 +1,104 @@
-# aicad-vae — AI-CAD 的 VAE
+# AI-CAD VAE
 
-AI-CAD 几何描述向量的 VAE 编码、解码、训练与检索工具，独立于网页服务运行。
-来源：`kkppshuai-svg/ai-cad`，基线提交 `52f44be`。本次实现版本 3.0.0，保留 `ai-cad-brep-vae-v2` 权重格式兼容性。
+**面向 CAD 几何描述的变分自编码器训练与检索工具。**
 
-## 升级内容
+AI-CAD VAE 从 STEP 模型提取几何统计特征，提供模型训练、批量编码、描述向量重建及相似样本检索。项目采用 Python 与 NumPy 实现，可独立于 AI-CAD Web 服务运行；STEP 特征提取依赖 CadQuery。
 
-- 编码/解码：可复用 NumPy 运行时缓存权重，批量编码、后验均值/方差、解码、重建，输入和权重形状/有限值校验。
-- 训练：归一化只使用训练集；微调保留完整权重及原归一化坐标系；小批量 Adam、KL warmup、验证集早停；保存训练/验证索引，支持复现。
-- 检索：批量查询及向量化距离计算；新模型结合几何描述距离与 latent 距离，减少压缩后相近 latent 的歧义；旧模型自动回退 latent 检索。
-- 性能：同一进程重复查询时只加载一次模型，批量矩阵运算；逐查询距离计算避免创建查询数 × 样本数 × 特征数的大型张量。
+| 项目 | 说明 |
+| --- | --- |
+| 实现版本 | 3.0.0（模型训练元数据中的版本标识） |
+| 模型格式 | `ai-cad-brep-vae-v2` |
+| 几何特征 | 内置 STEP 提取器输出 44 维描述向量 |
+| 运行环境 | Python 3.10+；依赖见 `requirements*.txt` |
+| 上游来源 | [kkppshuai-svg/ai-cad](https://github.com/kkppshuai-svg/ai-cad)，基线提交 `52f44be` |
 
-这里的解码输出是 **44 维几何统计描述**，不是可直接制造的 STEP/BREP 实体。文本结构管线仍是明确标注的线性基线，并非神经 VAE。本仓库不包含私人建模记录、API 密钥、原始训练集或预训练权重。
+## 能力范围
 
-## 安装与使用
+- **几何表征**：提取拓扑数量、包围盒比例、质量属性、曲面与曲线类型及邻接统计。
+- **模型训练**：支持小批量 Adam、KL 权重预热、验证集早停与预训练模型微调。
+- **批量推理**：缓存模型权重，提供编码、后验参数查询、解码与重建接口。
+- **相似检索**：结合潜空间距离与几何描述距离；旧模型可回退到潜空间检索。
 
-Python 3.10+：
+解码结果是几何统计描述向量，**不包含生成 STEP 实体所需的完整拓扑和参数信息**。仓库另保留文本结构线性降维基线，该基线不属于神经网络 VAE。训练器支持自定义维数；使用 STEP 查询时，特征名称及顺序必须与内置提取器一致。
+
+## 快速开始
+
+以下命令在仓库根目录执行，适用于 Bash 环境。
+
+### 1. 安装
 
 ```bash
+git clone https://github.com/kkppshuai-svg/aicad-vae.git
+cd aicad-vae
 python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-# 需要从 STEP 提取特征时：
-pip install -r requirements-cad.txt
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-几何数据为 JSONL，每行包含 `id`、可选 `name`、`geometry.featureNames` 与 `geometry.vector`。所有记录必须使用相同的特征顺序，至少两条；建议准备足够的独立训练与验证样本。
+私有仓库克隆需要相应访问权限。如需处理 STEP 文件，再安装几何依赖：
 
 ```bash
-python scripts/train_brep_vae.py --dataset data/geometry.jsonl --out models/vae.json --batch-size 64 --warmup-epochs 20
-python scripts/train_brep_vae.py --dataset data/finetune.jsonl --init-model models/vae.json --out models/tuned.json --learning-rate 0.003
-python scripts/query_brep_vae.py --model models/vae.json --step part.step
+python -m pip install -r requirements-cad.txt
 ```
 
-批量 JSON 输入为二维数组：
+### 2. 运行最小示例
+
+以下示例创建三维合成数据，用于验证训练与推理流程；不用于衡量 CAD 建模效果。
 
 ```bash
-python scripts/vae_cli.py encode --model models/vae.json --input vectors.json --out latents.json
-python scripts/vae_cli.py decode --model models/vae.json --input latents.json --out reconstructed.json
-python scripts/vae_cli.py search --model models/vae.json --input vectors.json --limit 5
+mkdir -p data models
+python - <<'PY'
+import json
+from pathlib import Path
+import numpy as np
+
+vectors = np.random.default_rng(42).normal(size=(32, 3))
+records = [
+    {"id": f"demo-{i}", "geometry": {
+        "featureNames": ["demo.x", "demo.y", "demo.z"],
+        "vector": vector.tolist()
+    }}
+    for i, vector in enumerate(vectors)
+]
+Path("data/demo.jsonl").write_text(
+    "".join(json.dumps(record) + "\n" for record in records), encoding="utf-8"
+)
+Path("data/query.json").write_text(json.dumps(vectors[:2].tolist()), encoding="utf-8")
+PY
+python scripts/train_brep_vae.py --dataset data/demo.jsonl --out models/demo.json
+python scripts/vae_cli.py encode --model models/demo.json --input data/query.json --out data/latents.json
+python scripts/vae_cli.py decode --model models/demo.json --input data/latents.json --out data/reconstructed.json
+python scripts/vae_cli.py search --model models/demo.json --input data/query.json --limit 3
 ```
 
-进程内高频调用：
+`encode` 和 `decode` 输出二维数值数组；`search` 为每个输入向量返回一个匹配列表。真实 STEP 数据的准备方式见[使用指南](docs/usage.md)。
 
-```python
-# 将 scripts 加入 PYTHONPATH
-from train_brep_vae import load_model
-from vae_runtime import VaeRuntime
-runtime = VaeRuntime(load_model('models/vae.json'))
-z = runtime.encode(vectors)
-mu, log_variance = runtime.encode(vectors, posterior=True)
-reconstructed = runtime.decode(z)
-matches = runtime.search(vectors, limit=5, geometry_weight=0.5)
-```
+## 文档
 
-## 验证与基准
+| 文档 | 内容 |
+| --- | --- |
+| [使用指南](docs/usage.md) | 数据准备、训练、微调、STEP 查询与常见问题 |
+| [接口与数据格式](docs/reference.md) | CLI 参数、Python API、模型字段与兼容性 |
+| [评估报告](docs/evaluation.md) | 实验方法、原始结果、指标解释与复现条件 |
+| [变更记录](CHANGELOG.md) | 3.0.0 的功能与行为变更 |
+
+## 验证
 
 ```bash
-pip install -r requirements-dev.txt
+python -m pip install -r requirements-dev.txt
 PYTHONPATH=scripts python -m pytest scripts -q
-OPENBLAS_NUM_THREADS=1 python benchmarks/evaluate.py --baseline /path/to/original/train_brep_vae.py --dataset data/geometry.jsonl --out benchmarks/results.json
 ```
 
-`benchmarks/*results.json` 记录本机实验。重建比较使用相同验证记录的原始描述 MSE；旧版归一化存在验证信息泄漏，不能把旧版 loss 与新版 loss 直接比较。检索指标仅为 3% 描述噪声下的样本身份命中率，不代表真实用户查询的语义准确率。编码加速比较“重复旧版单条调用”与“复用运行时批量调用”，不代表模型训练或端到端 STEP 处理同等倍数提速。
+测试涵盖特征提取、训练、微调、数据划分、批量运行时、CLI 及文本结构基线。小规模实验中，100 个 DeepCAD 样本在三个固定种子下的验证集原始描述 MSE 下降约 13%–29%；12 个本地样本上的结果有升有降。完整数值、时间开销与适用范围见[评估报告](docs/evaluation.md)。
 
-旧版 JSON 权重可直接加载。新模型仍写入兼容 v2 格式，新增字段为可选元数据；混合检索需要新模型的 `geometryVector`，旧模型自动使用 latent。升级微调不会重新计算归一化，如目标域差异很大应另训模型并独立评估。
+## 仓库结构
+
+```text
+scripts/          训练、推理、特征提取及测试
+benchmarks/       对比脚本与已记录的实验结果
+docs/             使用指南、接口参考与评估说明
+requirements*.txt 分层依赖清单
+CHANGELOG.md      变更记录
+```
+
+仓库不分发原始训练数据或预训练权重。生成的模型包含样本 ID、名称及几何描述向量，分享模型前应核对其中的数据。本仓库当前未提供独立许可证文件；使用及再分发时应确认相关代码和数据的授权条件。
