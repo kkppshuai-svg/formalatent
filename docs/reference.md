@@ -96,4 +96,4 @@ score = (1 - w) * latent_distance / sqrt(L) + w * geometry_distance
 
 3.0.0 是实现版本，模型格式仍为 v2，二者独立。运行时支持具有合法维数与权重的旧 v2 模型；没有几何向量的模型使用潜空间检索。新增字段不会改变既有权重布局。
 
-文本结构基线入口为 `train_cad_vae.py` 和 `query_cad_vae.py`，使用独立模型格式，不可传入 `VaeRuntime`。CLI 的完整参数可通过各脚本的 `--help` 查看。
+文本结构入口为 `train_cad_vae.py` 和 `query_cad_vae.py`，默认训练神经 VAE，`--backend svd` 保留旧基线。两者使用独立格式，不可传入几何 `VaeRuntime`；详见[文本结构神经 VAE](structure-vae.md)。CLI 的完整参数可通过各脚本的 `--help` 查看。

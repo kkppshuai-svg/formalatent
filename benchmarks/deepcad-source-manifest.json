@@ -1,0 +1,26 @@
+{
+  "source": "https://github.com/rundiwu/DeepCAD",
+  "downloadUrl": "http://www.cs.columbia.edu/cg/deepcad/data.tar",
+  "acquisition": "existing local archive; official source rediscovered via AnySearch",
+  "archiveSha256": "5caea634137cd9c73bbd5264d178926634fd75c29a92c0173792f99868247645",
+  "splitSha256": "8ab1793d286a3064eb9a8a0e80892b44f9817a21f7cdb31349556ef705d76afd",
+  "seed": 20260920,
+  "selected": 320,
+  "accepted": {
+    "train": 242,
+    "test": 59
+  },
+  "search": {
+    "provider": "AnySearch",
+    "query": "DeepCAD CAD dataset official github cad_json license",
+    "officialPageExtracted": "https://github.com/rundiwu/DeepCAD",
+    "note": "General web search and official URL extraction succeeded; academic.dataset request failed with TLS connection error."
+  },
+  "failureCount": 3,
+  "descriptorDuplicatesRemoved": 16,
+  "failureReasons": [
+    "ValueError: STEP roundtrip produced invalid geometry",
+    "ValueError: invalid or empty BREP",
+    "ValueError: invalid or empty BREP"
+  ]
+}

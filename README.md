@@ -8,7 +8,8 @@ FormaLatent 从 STEP 模型提取几何统计特征，提供模型训练、批�
 
 | 项目 | 说明 |
 | --- | --- |
-| 实现版本 | 3.0.0（模型训练元数据中的版本标识） |
+| 几何训练实现 | 3.0.0（模型训练元数据中的版本标识） |
+| 结构神经模型 | `formalatent-structure-vae-v1` |
 | 模型格式 | `ai-cad-brep-vae-v2` |
 | 几何特征 | 内置 STEP 提取器输出 44 维描述向量 |
 | 运行环境 | Python 3.10+；依赖见 `requirements*.txt` |
@@ -21,7 +22,7 @@ FormaLatent 从 STEP 模型提取几何统计特征，提供模型训练、批�
 - **批量推理**：缓存模型权重，提供编码、后验参数查询、解码与重建接口。
 - **相似检索**：结合潜空间距离与几何描述距离；旧模型可回退到潜空间检索。
 
-解码结果是几何统计描述向量，**不包含生成 STEP 实体所需的完整拓扑和参数信息**。仓库另保留文本结构线性降维基线，该基线不属于神经网络 VAE。训练器支持自定义维数；使用 STEP 查询时，特征名称及顺序必须与内置提取器一致。
+解码结果是几何统计描述向量，**不包含生成 STEP 实体所需的完整拓扑和参数信息**。仓库还提供[文本结构神经 VAE](docs/structure-vae.md)，并保留非神经网络的 SVD 基线作为对照。训练器支持自定义维数；使用 STEP 查询时，特征名称及顺序必须与内置提取器一致。
 
 ## 快速开始
 
@@ -82,6 +83,8 @@ python scripts/vae_cli.py search --model models/demo.json --input data/query.jso
 | [使用指南](docs/usage.md) | 数据准备、训练、微调、STEP 查询与常见问题 |
 | [接口与数据格式](docs/reference.md) | CLI 参数、Python API、模型字段与兼容性 |
 | [评估报告](docs/evaluation.md) | 实验方法、原始结果、指标解释与复现条件 |
+| [文本结构神经 VAE](docs/structure-vae.md) | 标签与数量的神经编码、解码、SVD 对照及 AI-CAD 接入 |
+| [外部样本训练记录](docs/deepcad-training.md) | AnySearch 来源、样本筛选、独立测试与实际训练产物 |
 | [变更记录](CHANGELOG.md) | 3.0.0 的功能与行为变更 |
 
 ## 验证

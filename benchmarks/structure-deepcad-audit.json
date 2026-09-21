@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "verifiedSamples": 301,
+  "trainSamples": 242,
+  "testSamples": 59,
+  "structureLatentShape": [
+    301,
+    8
+  ],
+  "geometryLatentShape": [
+    301,
+    8
+  ],
+  "testGeometryMseRecomputed": 0.14203447129236638,
+  "checks": [
+    "official split membership",
+    "source document checksums",
+    "dataset and model checksums",
+    "training-only retrieval indexes",
+    "reloaded encoding and reconstruction equality",
+    "finite outputs",
+    "recomputed held-out geometry MSE"
+  ],
+  "environment": {
+    "python": "3.10.12",
+    "numpy": "2.2.6",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35"
+  }
+}
