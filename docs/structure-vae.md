@@ -27,7 +27,9 @@ python scripts/train_cad_vae.py --dataset data/structure.jsonl --out models/stru
 {"id":"part-1","tokens":["feature:hole","zh:支架"],"structure":{"partCount":1,"jointCount":0},"quality":{"score":100}}
 ```
 
-神经训练参数包括 `--latent-dim 8`、`--hidden-dim 64`、`--epochs 400`、`--learning-rate 0.003`、`--beta 0.01`、`--batch-size 32`、`--seed 42` 和 `--warmup-epochs 20`。约 20% 的记录用于验证及选取权重，不参与词表与数量统计拟合；模型记录最优轮数、实际轮数和划分索引。
+神经训练参数包括 `--latent-dim 8`、`--hidden-dim 128`、`--epochs 400`、`--learning-rate 0.003`、`--beta 0.01`、`--batch-size 32`、`--seed 42`、`--warmup-epochs 20`、`--patience 60` 和 `--count-mask-probability 0.5`。约 20% 的记录用于验证及选取权重，不参与词表与数量统计拟合；模型记录最优轮数、实际轮数、早停耐心值、数量遮蔽概率和划分索引。
+
+数量遮蔽用于模拟只有文本标签、没有零件或关节数量的查询。取值必须在 `[0,1]`；`0` 表示训练时始终提供数量，`1` 表示始终隐藏数量。2026-09-23 的外部样本训练保持 `0.5`，只将隐藏层从 64 扩展到 128，并依据训练域内部验证集选择权重。
 
 ## 编码、解码与检索
 

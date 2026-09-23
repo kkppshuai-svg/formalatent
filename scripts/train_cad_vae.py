@@ -102,19 +102,21 @@ def main():
     parser.add_argument("--out", default="cad-latent/model.json")
     parser.add_argument("--latent-dim", type=int, default=8)
     parser.add_argument('--backend', choices=['neural','svd'], default='neural')
-    parser.add_argument('--hidden-dim', type=int, default=64)
+    parser.add_argument('--hidden-dim', type=int, default=128)
     parser.add_argument('--epochs', type=int, default=400)
     parser.add_argument('--learning-rate', type=float, default=0.003)
     parser.add_argument('--beta', type=float, default=0.01)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--warmup-epochs', type=int, default=20)
+    parser.add_argument('--patience', type=int, default=60)
+    parser.add_argument('--count-mask-probability', type=float, default=0.5)
     args = parser.parse_args()
 
     samples = load_samples(Path(args.dataset))
     if args.backend == 'neural':
         from structure_vae import train
-        payload = train(samples, args.latent_dim, args.hidden_dim, args.epochs, args.learning_rate, args.beta, args.batch_size, args.seed, args.warmup_epochs)
+        payload = train(samples, args.latent_dim, args.hidden_dim, args.epochs, args.learning_rate, args.beta, args.batch_size, args.seed, args.warmup_epochs, args.patience, args.count_mask_probability)
         out = Path(args.out); out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload,ensure_ascii=False,indent=2,allow_nan=False),encoding='utf-8')
         print(json.dumps({'ok':True,'format':payload['format'],'sampleCount':len(samples),'model':str(out),'metrics':payload['metrics']},ensure_ascii=False))

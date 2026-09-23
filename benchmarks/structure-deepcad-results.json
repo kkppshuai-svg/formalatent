@@ -3,17 +3,32 @@
   "testSamples": 59,
   "testSplit": "official DeepCAD test; excluded from training and checkpoint selection",
   "seed": 42,
+  "runConfig": {
+    "epochs": 600,
+    "latentDim": 8,
+    "structureHiddenDim": 128,
+    "geometryHiddenDim": 64,
+    "structureLearningRate": 0.003,
+    "geometryLearningRate": 0.003,
+    "beta": 0.01,
+    "structureBatchSize": 32,
+    "geometryBatchSize": 64,
+    "warmupEpochs": 20,
+    "earlyStoppingPatience": 60,
+    "countMaskProbability": 0.5
+  },
   "structure": {
     "format": "formalatent-structure-vae-v1",
     "vocabularySize": 19,
     "training": {
       "seed": 42,
-      "epochsCompleted": 76,
-      "bestEpoch": 16,
+      "epochsCompleted": 117,
+      "bestEpoch": 57,
       "beta": 0.01,
       "learningRate": 0.003,
       "batchSize": 32,
       "warmupEpochs": 20,
+      "earlyStoppingPatience": 60,
       "trainIndices": [
         20,
         217,
@@ -269,17 +284,17 @@
       "countMaskProbability": 0.5
     },
     "metrics": {
-      "validationLoss": 4.216835351429809,
-      "initialValidationLoss": 9.582030581312566,
-      "tokenBce": 0.20959470527505591,
-      "countMse": 3.978040997501448,
-      "kl": 2.9199648653305714
+      "validationLoss": 3.791595536063312,
+      "initialValidationLoss": 10.087012554873606,
+      "tokenBce": 0.07420725199285476,
+      "countMse": 3.6856593751254745,
+      "kl": 3.1728908944982535
     },
-    "testTokenBrier": 0.062018788766017484,
+    "testTokenBrier": 0.006691049099555479,
     "svdTestTokenBrier": 0.003205438516360763,
-    "testCountNormalizedLogMse": 0.1656383599163287,
+    "testCountNormalizedLogMse": 0.11154915604836202,
     "svdTestCountNormalizedLogMse": 7.540115498177998e-06,
-    "testTokenJaccardNeighborAgreement": 0.9322033898305084,
+    "testTokenJaccardNeighborAgreement": 0.9491525423728814,
     "svdTestTokenJaccardNeighborAgreement": 0.9152542372881356,
     "testUnknownTokenFraction": 0.0
   },
@@ -300,9 +315,9 @@
     "nonconstantLatents": true
   },
   "artifacts": {
-    "structure-vae.json": "8602415568cdcf691d1b91dbb7aed720bafcb0d0ee5c4c3e6b76d6754f337fc0",
+    "structure-vae.json": "609da8e6e35f774653357d3b75ac9868c80f28983abb9b6feaccb6ba5078f8e0",
     "geometry-vae.json": "3f856d6ee8b0d25fcb13556a512ef5026258cbb3402ba0f1e85bed1a24fd6c29",
-    "encoded-and-reconstructed.npz": "90777d97b94e0f189aa06d658fff7f7449e67dc4ec5cd3771e65e9aa7809ec20"
+    "encoded-and-reconstructed.npz": "43fe1dd03fb5ea2b6c99622a2b61f92c742090db350771f8344945237ccd53f1"
   },
   "datasetSha256": {
     "train.jsonl": "091a031d0bd8207b521814a5d31255cd6a6c8cc0d5da444c8dbbd99554c067f9",

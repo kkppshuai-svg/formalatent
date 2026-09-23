@@ -5,7 +5,7 @@ import json
 import platform
 from pathlib import Path
 import numpy as np
-from structure_vae import StructureVAE
+from structure_vae import StructureVAE, vectorize
 from vae_runtime import VaeRuntime
 from train_cad_vae import load_samples
 
@@ -48,7 +48,13 @@ def main():
             check(np.isfinite(values).all() and np.allclose(values,saved[key],atol=1e-10),f'reloaded inference mismatch: {key}')
     n=len(records['train']); test_mse=float(np.mean(((gd[n:]-gx[n:])/gr.std)**2))
     check(np.isclose(test_mse,report['geometry']['testNormalizedMse']),'reported geometry metric mismatch')
-    result={'passed':True,'verifiedSamples':len(all_samples),'trainSamples':n,'testSamples':len(all_samples)-n,'structureLatentShape':list(sx.shape),'geometryLatentShape':list(gz.shape),'testGeometryMseRecomputed':test_mse,'checks':['official split membership','source document checksums','dataset and model checksums','training-only retrieval indexes','reloaded encoding and reconstruction equality','finite outputs','recomputed held-out geometry MSE'],'environment':{'python':platform.python_version(),'numpy':np.__version__,'platform':platform.platform()}}
+    structure_x=vectorize(records['test'],sr.vocabulary,sr.mean,sr.std); vocabulary_size=len(sr.vocabulary)
+    token_brier=float(np.mean((sd['tokenProbabilities'][n:]-structure_x[:,:vocabulary_size])**2))
+    normalized_counts=(np.log1p(sd['counts'][n:])-sr.mean)/sr.std
+    count_mse=float(np.mean((normalized_counts-structure_x[:,vocabulary_size:])**2))
+    check(np.isclose(token_brier,report['structure']['testTokenBrier']),'reported structure token metric mismatch')
+    check(np.isclose(count_mse,report['structure']['testCountNormalizedLogMse']),'reported structure count metric mismatch')
+    result={'passed':True,'verifiedSamples':len(all_samples),'trainSamples':n,'testSamples':len(all_samples)-n,'structureLatentShape':list(sx.shape),'geometryLatentShape':list(gz.shape),'testGeometryMseRecomputed':test_mse,'testStructureTokenBrierRecomputed':token_brier,'testStructureCountMseRecomputed':count_mse,'checks':['official split membership','source document checksums','dataset and model checksums','training-only retrieval indexes','reloaded encoding and reconstruction equality','finite outputs','recomputed held-out geometry MSE','recomputed held-out structure metrics'],'environment':{'python':platform.python_version(),'numpy':np.__version__,'platform':platform.platform()}}
     (model_dir/'audit.json').write_text(json.dumps(result,indent=2))
     print(json.dumps(result,indent=2))
 

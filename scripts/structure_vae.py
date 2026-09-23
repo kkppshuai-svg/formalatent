@@ -58,10 +58,14 @@ def objective(params, x, token_count, beta, rng=None, encoder_x=None):
     return bce+mse+beta*kl, {'tokenBce':bce,'countMse':mse,'kl':kl}, g
 
 
-def train(samples, latent_dim=8, hidden_dim=64, epochs=400, learning_rate=0.003, beta=0.01, batch_size=32, seed=42, warmup_epochs=20):
+def train(samples, latent_dim=8, hidden_dim=128, epochs=400, learning_rate=0.003, beta=0.01,
+          batch_size=32, seed=42, warmup_epochs=20, patience=60,
+          count_mask_probability=0.5):
     if len(samples) < 3:
         raise ValueError('neural structure VAE requires at least three samples')
-    if min(latent_dim, hidden_dim, epochs, batch_size) < 1 or warmup_epochs < 0 or not np.isfinite([learning_rate,beta]).all() or learning_rate <= 0 or beta < 0:
+    if (min(latent_dim, hidden_dim, epochs, batch_size, patience) < 1 or warmup_epochs < 0
+            or not np.isfinite([learning_rate, beta, count_mask_probability]).all()
+            or learning_rate <= 0 or beta < 0 or not 0 <= count_mask_probability <= 1):
         raise ValueError('invalid training parameters')
     rng = np.random.default_rng(seed)
     order = rng.permutation(len(samples)); nv = max(1, round(len(samples)*0.2))
@@ -82,7 +86,7 @@ def train(samples, latent_dim=8, hidden_dim=64, epochs=400, learning_rate=0.003,
             target = x[order[start:start+batch_size]]
             encoded = target.copy()
             # Text-only queries omit counts; train this case explicitly.
-            encoded[rng.random(len(encoded)) < 0.5, -2:] = 0
+            encoded[rng.random(len(encoded)) < count_mask_probability, -2:] = 0
             _,_,g = objective(p,target,v,beta*min(1,epoch/max(1,warmup_epochs)),rng,encoded)
             step += 1; adam_step(p,g,state,step,learning_rate)
         value,_,_ = objective(p,x[vi],v,beta)
@@ -92,14 +96,14 @@ def train(samples, latent_dim=8, hidden_dim=64, epochs=400, learning_rate=0.003,
             best_loss,best,best_epoch,stale = value,copy.deepcopy(p),epoch,0
         else:
             stale += 1
-        if stale >= max(60,warmup_epochs):
+        if stale >= max(patience,warmup_epochs):
             break
     _,metrics,_ = objective(best,x[vi],v,beta)
     latent = forward(best,x,sample=False)['mu']
     return {'format':FORMAT,'sampleCount':len(samples),'inputDim':x.shape[1], 'hiddenDim':hidden_dim,'latentDim':latent_dim,
             'vocabulary':vocabulary,'numericFeatures':list(COUNTS),'countNormalization':{'transform':'log1p','mean':mean.tolist(),'std':std.tolist()},
             'weights':{k:a.tolist() for k,a in best.items()},
-            'training':{'seed':seed,'epochsCompleted':epoch,'bestEpoch':best_epoch,'beta':beta,'learningRate':learning_rate,'batchSize':batch_size,'warmupEpochs':warmup_epochs,'trainIndices':ti.tolist(),'validationIndices':vi.tolist(),'qualityPolicy':'ranking-only','excludedTokenPrefixes':list(EXCLUDED),'countMaskProbability':0.5},
+            'training':{'seed':seed,'epochsCompleted':epoch,'bestEpoch':best_epoch,'beta':beta,'learningRate':learning_rate,'batchSize':batch_size,'warmupEpochs':warmup_epochs,'earlyStoppingPatience':patience,'trainIndices':ti.tolist(),'validationIndices':vi.tolist(),'qualityPolicy':'ranking-only','excludedTokenPrefixes':list(EXCLUDED),'countMaskProbability':count_mask_probability},
             'metrics':{'validationLoss':best_loss,'initialValidationLoss':sum((initial_metrics['tokenBce'],initial_metrics['countMse'],beta*initial_metrics['kl'])),**metrics},
             'samples':[{'id':s.get('id'),'name':s.get('name'),'quality':s.get('quality'),'tokens':tokens(s),'latent':latent[i].tolist()} for i,s in enumerate(samples)]}
 

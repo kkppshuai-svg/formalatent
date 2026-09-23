@@ -12,6 +12,8 @@
     8
   ],
   "testGeometryMseRecomputed": 0.14203447129236638,
+  "testStructureTokenBrierRecomputed": 0.006691049099555479,
+  "testStructureCountMseRecomputed": 0.11154915604836202,
   "checks": [
     "official split membership",
     "source document checksums",
@@ -19,7 +21,8 @@
     "training-only retrieval indexes",
     "reloaded encoding and reconstruction equality",
     "finite outputs",
-    "recomputed held-out geometry MSE"
+    "recomputed held-out geometry MSE",
+    "recomputed held-out structure metrics"
   ],
   "environment": {
     "python": "3.10.12",

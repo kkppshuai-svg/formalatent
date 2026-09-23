@@ -2,7 +2,7 @@
 
 [返回首页](../README.md) · [结构神经 VAE](structure-vae.md)
 
-本次工作完成了来源查找、样本重建与筛选、两条 VAE 训练、独立测试及 AI-CAD 模型加载验证。审计完成于 2026-09-21，运行目录沿用启动时的标识 `deepcad-20260920`。
+本次工作完成了来源查找、样本重建与筛选、两条 VAE 训练、独立测试及 AI-CAD 模型加载验证。数据准备目录沿用 `deepcad-20260920`；最新模型运行目录为 `deepcad-20260923`，审计完成于 2026-09-23。
 
 ## 来源与数据取得
 
@@ -32,10 +32,10 @@
 
 ## 训练与“通过 VAE”的定义
 
-两条模型均使用 242 个训练域样本，内部保留约 20% 作为选取权重的验证集。官方 test 的 59 个样本不参与训练、归一化拟合或权重选择。固定训练种子为 `42`，最大训练轮数为 600。
+两条模型均使用 242 个训练域样本，内部保留约 20% 作为选取权重的验证集。官方 test 的 59 个样本不参与训练、归一化拟合或权重选择。固定训练种子为 `42`，最大训练轮数为 600，早停耐心值为 60。
 
 - **几何 VAE**：44 维描述 → 8 维潜向量 → 44 维重建描述。
-- **结构 VAE**：19 个结构标签及两个数量特征 → 8 维潜向量 → 标签概率及数量预测。
+- **结构 VAE**：19 个结构标签及两个数量特征 → 128 维隐藏层 → 8 维潜向量 → 标签概率及数量预测；训练时以 50% 概率隐藏数量输入。
 
 301 个样本均实际完成编码和解码，并保存为压缩 NumPy 文件。随后独立重新加载数据与模型，验证来源哈希、官方划分、索引只含训练域样本、输出有限且与保存结果一致，并重新计算几何测试误差。
 
@@ -46,13 +46,13 @@
 | 指标 | 神经 VAE | 对照 |
 | --- | ---: | ---: |
 | 几何标准化重建 MSE（越低越好） | 0.142034 | 训练均值预测：0.881933 |
-| 结构标签 Brier 误差（越低越好） | 0.062019 | 同特征 SVD：0.003205 |
-| 数量标准化 log1p MSE（越低越好） | 0.165638 | 同特征 SVD：0.00000754 |
-| 标签 Jaccard 最邻近一致率（越高越好） | 93.22% | 同特征 SVD：91.53% |
+| 结构标签 Brier 误差（越低越好） | 0.006691 | 同特征 SVD：0.003205 |
+| 数量标准化 log1p MSE（越低越好） | 0.111549 | 同特征 SVD：0.00000754 |
+| 标签 Jaccard 最邻近一致率（越高越好） | 94.92% | 同特征 SVD：91.53% |
 
 SVD 对照在与神经模型相同的无质量标签向量、训练子集、词表及数量归一化上拟合。检索一致率以标签 Jaccard 最大的训练样本作为代理参考，接受并列最大值；它没有人工语义相关性标注，不能代表自然语言查询准确率。
 
-这次结构神经模型的重建明显弱于 SVD，检索代理指标略高。结果没有证明全面优于 SVD，因此保存对照、保留候选模型，不直接替换 AI-CAD 正在使用的权重。完整记录：[structure-deepcad-results.json](../benchmarks/structure-deepcad-results.json)。
+与 2026-09-21 的 64 隐藏单元运行相比，新模型的标签 Brier 误差降低 89.21%，数量误差降低 32.65%，检索代理指标增加 1.69 个百分点。结构神经模型的重建仍弱于 SVD，检索代理指标则更高。结果没有证明全面优于 SVD，因此保存对照、保留候选模型，不直接替换 AI-CAD 正在使用的权重。完整记录：[structure-deepcad-results.json](../benchmarks/structure-deepcad-results.json)。
 
 ## 复现命令
 
@@ -65,10 +65,12 @@ OPENBLAS_NUM_THREADS=1 python scripts/prepare_deepcad_training.py \
   --out-dir data/deepcad-20260920
 
 OPENBLAS_NUM_THREADS=1 python scripts/run_training_experiment.py \
-  --data-dir data/deepcad-20260920 --out-dir models/deepcad-20260920
+  --data-dir data/deepcad-20260920 --out-dir models/deepcad-20260923 \
+  --structure-hidden-dim 128 --geometry-hidden-dim 64 \
+  --epochs 600 --patience 60 --seed 42
 
 OPENBLAS_NUM_THREADS=1 python scripts/audit_training_run.py \
-  --data-dir data/deepcad-20260920 --model-dir models/deepcad-20260920 \
+  --data-dir data/deepcad-20260920 --model-dir models/deepcad-20260923 \
   --split-file /path/to/train_val_test_split.json
 ```
 
@@ -79,7 +81,7 @@ OPENBLAS_NUM_THREADS=1 python scripts/audit_training_run.py \
 ```bash
 python scripts/train_cad_vae.py --backend svd \
   --dataset data/deepcad-20260920/train.jsonl \
-  --out models/deepcad-20260920/structure-svd-legacy.json
+  --out models/deepcad-20260923/structure-svd-legacy.json
 ```
 
 ## 本机 AI-CAD 接入

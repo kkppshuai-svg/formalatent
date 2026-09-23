@@ -38,7 +38,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-私有仓库克隆需要相应访问权限。如需处理 STEP 文件，再安装几何依赖：
+如需处理 STEP 文件，再安装几何依赖：
 
 ```bash
 python -m pip install -r requirements-cad.txt
@@ -75,6 +75,19 @@ python scripts/vae_cli.py search --model models/demo.json --input data/query.jso
 ```
 
 `encode` 和 `decode` 输出二维数值数组；`search` 为每个输入向量返回一个匹配列表。真实 STEP 数据的准备方式见[使用指南](docs/usage.md)。
+
+## 最新训练快照
+
+2026-09-23 使用 242 个 DeepCAD 训练样本重新训练结构与几何 VAE，并在 59 个未参与训练、归一化或权重选择的官方测试样本上评估。结构 VAE 隐藏层扩展至 128，固定种子为 `42`，最佳权重出现在第 57 轮，早停于第 117 轮。
+
+| 指标 | 2026-09-23 | 上一版 | 变化 |
+| --- | ---: | ---: | ---: |
+| 结构标签 Brier 误差 ↓ | 0.006691 | 0.062019 | 降低 89.21% |
+| 数量标准化 log1p MSE ↓ | 0.111549 | 0.165638 | 降低 32.65% |
+| 标签 Jaccard 最邻近一致率 ↑ | 94.92% | 93.22% | 增加 1.69 个百分点 |
+| 几何标准化重建 MSE ↓ | 0.142034 | 0.142034 | 不变 |
+
+所有 301 个样本均完成编码与解码，独立重载审计通过。SVD 在结构重建误差上仍优于神经 VAE，因此结果不宣称神经模型全面领先。训练配置、对照指标和复现命令见[最新外部样本训练记录](docs/deepcad-training.md)。
 
 ## 文档
 

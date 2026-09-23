@@ -13,15 +13,34 @@ from vae_runtime import VaeRuntime
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--data-dir',required=True);ap.add_argument('--out-dir',required=True)
+    ap.add_argument('--seed',type=int,default=42)
+    ap.add_argument('--epochs',type=int,default=600)
+    ap.add_argument('--latent-dim',type=int,default=8)
+    ap.add_argument('--structure-hidden-dim',type=int,default=128)
+    ap.add_argument('--geometry-hidden-dim',type=int,default=64)
+    ap.add_argument('--structure-learning-rate',type=float,default=0.003)
+    ap.add_argument('--geometry-learning-rate',type=float,default=0.003)
+    ap.add_argument('--beta',type=float,default=0.01)
+    ap.add_argument('--structure-batch-size',type=int,default=32)
+    ap.add_argument('--geometry-batch-size',type=int,default=64)
+    ap.add_argument('--warmup-epochs',type=int,default=20)
+    ap.add_argument('--patience',type=int,default=60)
+    ap.add_argument('--count-mask-probability',type=float,default=0.5)
     args=ap.parse_args(); data=Path(args.data_dir); out=Path(args.out_dir);out.mkdir(parents=True,exist_ok=True)
     training=load_samples(data/'train.jsonl'); test=load_samples(data/'test.jsonl')
     assert {s['id'] for s in training}.isdisjoint({s['id'] for s in test})
-    structure=train(training,epochs=600,seed=42)
+    structure=train(training,latent_dim=args.latent_dim,hidden_dim=args.structure_hidden_dim,
+        epochs=args.epochs,learning_rate=args.structure_learning_rate,beta=args.beta,
+        batch_size=args.structure_batch_size,seed=args.seed,warmup_epochs=args.warmup_epochs,
+        patience=args.patience,count_mask_probability=args.count_mask_probability)
     write_model(structure,out/'structure-vae.json')
     names=training[0]['geometry']['featureNames']
     assert all(s['geometry']['featureNames']==names for s in training+test)
     matrix=np.array([s['geometry']['vector'] for s in training]); test_x=np.array([s['geometry']['vector'] for s in test])
-    geometry=train_brep_vae(training,names,matrix,epochs=600,seed=42,learning_rate=0.003)
+    geometry=train_brep_vae(training,names,matrix,latent_dim=args.latent_dim,
+        hidden_dim=args.geometry_hidden_dim,epochs=args.epochs,beta=args.beta,
+        seed=args.seed,learning_rate=args.geometry_learning_rate,
+        batch_size=args.geometry_batch_size,warmup_epochs=args.warmup_epochs)
     write_model(geometry,out/'geometry-vae.json')
     sr=StructureVAE(structure);gr=VaeRuntime(geometry)
     all_samples=training+test
@@ -49,7 +68,13 @@ def main():
             q=set(s['tokens']); overlaps=[len(q&set(t['tokens']))/max(1,len(q|set(t['tokens']))) for t in training]
             hits += overlaps[actual] >= max(overlaps)-1e-12
         return hits/len(test)
-    report={'trainSamples':n,'testSamples':len(test),'testSplit':'official DeepCAD test; excluded from training and checkpoint selection','seed':42,
+    report={'trainSamples':n,'testSamples':len(test),'testSplit':'official DeepCAD test; excluded from training and checkpoint selection','seed':args.seed,
+       'runConfig':{'epochs':args.epochs,'latentDim':args.latent_dim,
+         'structureHiddenDim':args.structure_hidden_dim,'geometryHiddenDim':args.geometry_hidden_dim,
+         'structureLearningRate':args.structure_learning_rate,'geometryLearningRate':args.geometry_learning_rate,
+         'beta':args.beta,'structureBatchSize':args.structure_batch_size,
+         'geometryBatchSize':args.geometry_batch_size,'warmupEpochs':args.warmup_epochs,
+         'earlyStoppingPatience':args.patience,'countMaskProbability':args.count_mask_probability},
        'structure':{'format':structure['format'],'vocabularySize':vocab,'training':structure['training'],'metrics':structure['metrics'],
          'testTokenBrier':float(np.mean((probs-tx[:,:vocab])**2)),'svdTestTokenBrier':float(np.mean((np.clip(svd_rec[:,:vocab],0,1)-tx[:,:vocab])**2)),
          'testCountNormalizedLogMse':float(np.mean((neural_counts-tx[:,vocab:])**2)),'svdTestCountNormalizedLogMse':float(np.mean((svd_rec[:,vocab:]-tx[:,vocab:])**2)),

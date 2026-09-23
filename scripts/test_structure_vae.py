@@ -55,6 +55,13 @@ class StructureTests(unittest.TestCase):
         with self.assertRaises(ValueError): runtime.decode([[float('nan')]*m['latentDim']])
         with self.assertRaises(ValueError): runtime.encode([{'structure':{'partCount':-1}}])
 
+    def test_training_controls_are_recorded_and_validated(self):
+        model=train(samples(),epochs=3,hidden_dim=16,patience=2,count_mask_probability=0.25)
+        self.assertEqual(model['training']['earlyStoppingPatience'],2)
+        self.assertEqual(model['training']['countMaskProbability'],0.25)
+        with self.assertRaises(ValueError):
+            train(samples(),epochs=2,count_mask_probability=1.1)
+
     def test_neural_cli_and_legacy_switch(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp); ds=root/'data.jsonl'; model=root/'model.json'
