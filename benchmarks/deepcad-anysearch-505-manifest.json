@@ -1,0 +1,136 @@
+{
+  "source": "https://github.com/rundiwu/DeepCAD",
+  "downloadUrl": "http://www.cs.columbia.edu/cg/deepcad/data.tar",
+  "acquisition": "existing local archive; official source rediscovered via AnySearch",
+  "archiveSha256": "5caea634137cd9c73bbd5264d178926634fd75c29a92c0173792f99868247645",
+  "splitSha256": "8ab1793d286a3064eb9a8a0e80892b44f9817a21f7cdb31349556ef705d76afd",
+  "seed": 20260923,
+  "selected": 530,
+  "accepted": {
+    "train": 415,
+    "test": 90
+  },
+  "failures": [
+    {
+      "split": "train",
+      "id": "0059/00598637",
+      "error": "ValueError: invalid or empty BREP"
+    },
+    {
+      "split": "train",
+      "id": "0069/00698495",
+      "error": "ValueError: invalid or empty BREP"
+    },
+    {
+      "split": "train",
+      "id": "0077/00779047",
+      "error": "ValueError: invalid or empty BREP"
+    },
+    {
+      "split": "train",
+      "id": "0014/00144969",
+      "error": "ValueError: invalid or empty BREP"
+    },
+    {
+      "split": "test",
+      "id": "0013/00135927",
+      "error": "ValueError: invalid or empty BREP"
+    },
+    {
+      "split": "test",
+      "id": "0029/00294705",
+      "error": "ValueError: invalid or empty BREP"
+    }
+  ],
+  "descriptorDuplicatesRemoved": [
+    {
+      "split": "train",
+      "id": "deepcad-0061_00612977"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0015_00151331"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0027_00276243"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0093_00934299"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0027_00270840"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0042_00422132"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0054_00549370"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0021_00214220"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0072_00725907"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0015_00156015"
+    },
+    {
+      "split": "train",
+      "id": "deepcad-0093_00939231"
+    },
+    {
+      "split": "test",
+      "id": "deepcad-0087_00870274"
+    },
+    {
+      "split": "test",
+      "id": "deepcad-0053_00533580"
+    },
+    {
+      "split": "test",
+      "id": "deepcad-0057_00572615"
+    },
+    {
+      "split": "test",
+      "id": "deepcad-0094_00944195"
+    },
+    {
+      "split": "test",
+      "id": "deepcad-0037_00376038"
+    },
+    {
+      "split": "test",
+      "id": "deepcad-0062_00628527"
+    },
+    {
+      "split": "test",
+      "id": "deepcad-0050_00500125"
+    },
+    {
+      "split": "test",
+      "id": "deepcad-0003_00038934"
+    }
+  ],
+  "search": {
+    "provider": "AnySearch 3.1.1",
+    "searchedAt": "2026-09-23",
+    "queries": [
+      "DeepCAD dataset official CAD construction sequences license download",
+      "Fusion 360 Gallery dataset official CAD reconstruction sequences license",
+      "SketchGraphs dataset official parametric CAD sketches license",
+      "ABC dataset CAD B-rep official license",
+      "parametric CAD dataset VAE training"
+    ],
+    "selected": "DeepCAD",
+    "selectionRecord": "source-selection.json"
+  }
+}

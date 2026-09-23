@@ -1,98 +1,91 @@
-# DeepCAD 外部样本训练记录
+# DeepCAD 505 组外部样本训练记录
 
 [返回首页](../README.md) · [结构神经 VAE](structure-vae.md)
 
-本次工作完成了来源查找、样本重建与筛选、两条 VAE 训练、独立测试及 AI-CAD 模型加载验证。数据准备目录沿用 `deepcad-20260920`；最新模型运行目录为 `deepcad-20260923`，审计完成于 2026-09-23。
+本记录描述 2026-09-23 完成的数据源检索、样本筛选、双 VAE 训练、独立测试、重载审计和 AI-CAD 部署。公开仓库只保存处理代码、来源记录、汇总指标和哈希，不分发原始样本或模型权重。
 
-## 来源与数据取得
+## AnySearch 数据源选择
 
-使用 AnySearch 查询 `DeepCAD CAD dataset official github cad_json license`，并提取[DeepCAD 官方仓库](https://github.com/rundiwu/DeepCAD)说明。官方提供原始 CAD 构建序列 JSON、向量数据和训练/验证/测试划分；论文为 [DeepCAD: A Deep Generative Network for Computer-Aided Design Models](https://arxiv.org/abs/2105.09492)。
+使用 AnySearch 3.1.1 执行通用搜索与 academic.dataset 垂直搜索，并提取可访问的官方页面。检索记录见 [deepcad-anysearch-source-selection.json](../benchmarks/deepcad-anysearch-source-selection.json)。
 
-官方说明中的[数据下载入口](http://www.cs.columbia.edu/cg/deepcad/data.tar)与本机已有归档的来源记录相符。本次复用已有归档，未重新下载；记录了归档、划分文件及每个导入 JSON 的 SHA-256。哈希用于追踪此次本地输入，不能替代数据发布方签名。AnySearch 的普通搜索与官方页面提取成功，学术数据垂直搜索出现 TLS 连接错误。
+| 数据源 | 官方规模与表示 | 本次决定 |
+| --- | --- | --- |
+| [DeepCAD](https://www.cs.columbia.edu/cg/deepcad/) | 178,238 个 CAD 模型及构造序列，带官方划分 | 采用；与现有草图/拉伸重建、结构标签和 STEP/BREP 描述管线一致 |
+| [Fusion 360 Gallery Reconstruction](https://github.com/AutodeskAILab/Fusion360GalleryDataset) | 8,625 条序列，下载约 2 GB | 暂缓；需要独立的 Fusion 360 转换链 |
+| [SketchGraphs](https://github.com/PrincetonLIPS/SketchGraphs) | 1,500 万二维约束草图，序列文件约 15 GB | 暂缓；缺少当前几何 VAE 所需的已验证三维 STEP/BREP |
+| [ABC Dataset](https://deep-geometry.github.io/abc-dataset/) | 100 万 B-Rep CAD 模型 | 暂缓；适合几何预训练，但没有当前结构 VAE 使用的构造序列标签 |
 
-官方仓库代码提供 MIT 许可证；代码许可不能自动视为全部源 CAD 数据的再分发许可。本仓库只提交处理代码、汇总结果及哈希，不分发原始样本或训练权重。
-
-来源摘要：[deepcad-source-manifest.json](../benchmarks/deepcad-source-manifest.json)。
+DeepCAD 官方下载入口与本机已有归档一致。本次复用该归档，记录归档 SHA-256、官方划分 SHA-256 和每个输入文档的 SHA-256。哈希用于复现实验输入，不能替代数据发布方签名或授权说明。DeepCAD 代码许可不能自动视为源 CAD 数据的再分发许可。
 
 ## 样本准备
 
-使用种子 `20260920`，从官方 train 中选取 256 个候选，从官方 test 中选取 64 个候选。逐个 JSON 重建 STEP；检查实体非空、体积为正、BREP 有效，且 STEP 导出再导入后仍有效。单个重建任务限制为 35 秒，最多同时处理两个样本。
+选择种子为 20260923。从官方 train 随机选取 430 个候选，从官方 test 选取 100 个候选。每个样本必须满足：
+
+1. 构造序列仅包含当前导入器支持的草图与拉伸操作；
+2. 重建实体非空、体积为正且 BREP 有效；
+3. 导出 STEP 后重新导入仍有效；
+4. 44 维几何描述与已保留样本不重复。
 
 | 阶段 | 数量 |
 | --- | ---: |
-| 候选样本 | 320 |
-| 无效几何或 STEP 往返校验失败 | 3 |
-| 重复描述向量剔除 | 16 |
-| 最终训练样本 | 242 |
-| 最终独立测试样本 | 59 |
+| 候选样本 | 530 |
+| 几何或 STEP 往返失败 | 6 |
+| 重复描述向量剔除 | 19 |
+| 最终训练域样本 | 415 |
+| 最终独立测试样本 | 90 |
+| 最终总数 | **505** |
 
-去重使用保留八位小数的 44 维描述，优先保留训练记录；它不是完整拓扑同一性检测。当前导入器支持草图与拉伸构建序列，几何有效性检查不保证重建实体与原始 Onshape 模型完全一致。
+去重使用保留八位小数的 44 维描述，优先保留训练记录；它不是完整拓扑同一性检测。结构标签来自操作、曲线类型及数量，不是自然语言标注。数据没有装配关节标注，不能据此评估装配语义或关节学习能力。
 
-结构标签来自序列中的操作、曲线类型与数量，不是人工撰写的自然语言说明。零件数取重建后的实体数；该数据没有装配关节标注，`jointCount=0` 只用于此单体 CAD 导入流程，不能据此评估关节学习能力。
+数据清单见 [deepcad-anysearch-505-manifest.json](../benchmarks/deepcad-anysearch-505-manifest.json)。
 
-## 训练与“通过 VAE”的定义
+## 训练配置
 
-两条模型均使用 242 个训练域样本，内部保留约 20% 作为选取权重的验证集。官方 test 的 59 个样本不参与训练、归一化拟合或权重选择。固定训练种子为 `42`，最大训练轮数为 600，早停耐心值为 60。
+官方 test 的 90 个样本不参与训练、归一化、词表构建、早停或权重选择。结构和几何模型均使用 415 个训练域样本，并在训练域内部保留约 20% 验证集。
 
-- **几何 VAE**：44 维描述 → 8 维潜向量 → 44 维重建描述。
-- **结构 VAE**：19 个结构标签及两个数量特征 → 128 维隐藏层 → 8 维潜向量 → 标签概率及数量预测；训练时以 50% 概率隐藏数量输入。
+| 参数 | 结构 VAE | 几何 VAE |
+| --- | ---: | ---: |
+| 输入 | 21 个结构标签 + 2 个数量特征 | 44 维 BREP 描述 |
+| 隐藏层 | 128 | 64 |
+| 潜空间 | 8 | 8 |
+| 最大轮数 | 600 | 600 |
+| 学习率 | 0.003 | 0.003 |
+| KL 权重 | 0.01 | 0.01 |
+| 预热轮数 | 20 | 20 |
+| 批大小 | 32 | 64 |
+| 固定种子 | 42 | 42 |
 
-301 个样本均实际完成编码和解码，并保存为压缩 NumPy 文件。随后独立重新加载数据与模型，验证来源哈希、官方划分、索引只含训练域样本、输出有限且与保存结果一致，并重新计算几何测试误差。
-
-通过的是**数据与训练推理流程的完整性验证**，不表示能够直接生成 STEP，也不等于获得工程或制造认证。审计结果：[structure-deepcad-audit.json](../benchmarks/structure-deepcad-audit.json)。
+结构 VAE 以 50% 概率隐藏数量输入，模拟只有结构标签的查询；最佳权重位于第 87 轮，早停于第 147 轮。
 
 ## 独立测试结果
 
 | 指标 | 神经 VAE | 对照 |
 | --- | ---: | ---: |
-| 几何标准化重建 MSE（越低越好） | 0.142034 | 训练均值预测：0.881933 |
-| 结构标签 Brier 误差（越低越好） | 0.006691 | 同特征 SVD：0.003205 |
-| 数量标准化 log1p MSE（越低越好） | 0.111549 | 同特征 SVD：0.00000754 |
-| 标签 Jaccard 最邻近一致率（越高越好） | 94.92% | 同特征 SVD：91.53% |
+| 几何标准化重建 MSE ↓ | 0.057888 | 训练均值预测：0.726326 |
+| 结构标签 Brier 误差 ↓ | 0.004058 | 同输入 SVD：0.009994 |
+| 数量标准化 log1p MSE ↓ | 0.020149 | 同输入 SVD：0.00003529 |
+| 标签 Jaccard 最邻近一致率 ↑ | 92.22% | 同输入 SVD：91.11% |
 
-SVD 对照在与神经模型相同的无质量标签向量、训练子集、词表及数量归一化上拟合。检索一致率以标签 Jaccard 最大的训练样本作为代理参考，接受并列最大值；它没有人工语义相关性标注，不能代表自然语言查询准确率。
+与上一版 301 样本运行相比，标签 Brier 误差降低 39.35%，数量误差降低 81.94%，几何测试误差降低 59.24%；检索代理一致率下降 2.69 个百分点。神经模型在标签重建和检索代理上优于本次 SVD 对照，SVD 在数量重建上仍明显更好。
 
-与 2026-09-21 的 64 隐藏单元运行相比，新模型的标签 Brier 误差降低 89.21%，数量误差降低 32.65%，检索代理指标增加 1.69 个百分点。结构神经模型的重建仍弱于 SVD，检索代理指标则更高。结果没有证明全面优于 SVD，因此保存对照、保留候选模型，不直接替换 AI-CAD 正在使用的权重。完整记录：[structure-deepcad-results.json](../benchmarks/structure-deepcad-results.json)。
+Jaccard 一致率使用结构标签最邻近样本作为透明代理，没有人工语义相关性标注，不能解释为自然语言检索准确率。完整结果见 [deepcad-anysearch-505-results.json](../benchmarks/deepcad-anysearch-505-results.json)。
+
+## 审计与部署
+
+505 个样本均完成结构与几何编码、解码。独立审计重新加载数据和模型，验证官方划分、来源文档哈希、训练索引、模型与数据哈希、有限输出和保存结果一致性，并复算三项独立测试指标。审计结果见 [deepcad-anysearch-505-audit.json](../benchmarks/deepcad-anysearch-505-audit.json)。
+
+模型以 vae-deepcad-anysearch-505-20260923 部署到 AI-CAD。运行时只安装 415 个训练样本；90 个官方 test 样本保持隔离。真实 CadLatentTrainingManager.plannerModel() 加载与“拉伸 圆形草图 切除”检索验证通过。
+
+通过审计表示数据、训练和推理链完整，不表示模型能直接生成 STEP，也不等于工程或制造认证。
 
 ## 复现命令
 
-以下从已有官方归档开始，不包含下载步骤。需安装 `requirements-cad.txt`。
+~~~bash
+OPENBLAS_NUM_THREADS=1 python scripts/prepare_deepcad_training.py   --archive /path/to/cad_json.tar.gz   --split-file /path/to/train_val_test_split.json   --out-dir data/deepcad-anysearch-500-20260923   --train-count 430 --test-count 100 --seed 20260923
 
-```bash
-OPENBLAS_NUM_THREADS=1 python scripts/prepare_deepcad_training.py \
-  --archive /path/to/cad_json.tar.gz \
-  --split-file /path/to/train_val_test_split.json \
-  --out-dir data/deepcad-20260920
+OPENBLAS_NUM_THREADS=1 python scripts/run_training_experiment.py   --data-dir data/deepcad-anysearch-500-20260923   --out-dir models/deepcad-anysearch-505-20260923   --structure-hidden-dim 128 --geometry-hidden-dim 64   --epochs 600 --patience 60 --seed 42
 
-OPENBLAS_NUM_THREADS=1 python scripts/run_training_experiment.py \
-  --data-dir data/deepcad-20260920 --out-dir models/deepcad-20260923 \
-  --structure-hidden-dim 128 --geometry-hidden-dim 64 \
-  --epochs 600 --patience 60 --seed 42
+OPENBLAS_NUM_THREADS=1 python scripts/audit_training_run.py   --data-dir data/deepcad-anysearch-500-20260923   --model-dir models/deepcad-anysearch-505-20260923   --split-file /path/to/train_val_test_split.json
+~~~
 
-OPENBLAS_NUM_THREADS=1 python scripts/audit_training_run.py \
-  --data-dir data/deepcad-20260920 --model-dir models/deepcad-20260923 \
-  --split-file /path/to/train_val_test_split.json
-```
-
-`prepare_deepcad_training.py` 默认候选数量与种子对应本报告。运行目录包含源 JSON、STEP、最终 JSONL、失败详情及来源清单；不要将不同输入归档混入同一运行目录。第三方库、平台差异可能影响几何重建和浮点结果。
-
-训练产物包括 `structure-vae.json`、`geometry-vae.json`、`encoded-and-reconstructed.npz`、`report.json` 和 `audit.json`。旧格式 SVD 对照可单独生成：
-
-```bash
-python scripts/train_cad_vae.py --backend svd \
-  --dataset data/deepcad-20260920/train.jsonl \
-  --out models/deepcad-20260923/structure-svd-legacy.json
-```
-
-## 本机 AI-CAD 接入
-
-本次产物另存于 AI-CAD 的 `pretraining-data/formalatent-neural-20260920/`，并部署了新格式的模型加载和检索代码。现有活动模型未被覆盖。
-
-验证程序通过真实的 `CadLatentTrainingManager.plannerModel()` 加载新模型，并以“拉伸 圆形草图 切除”执行检索。验证使用临时 runtime 目录，避免影响现有会话：
-
-```bash
-node integrations/ai-cad/verify-model.mjs \
-  /path/to/ai-cad /path/to/ai-cad/pretraining-data/formalatent-neural-20260920
-```
-
-源代码接入与运行中服务生效是不同步骤；长驻服务需重启后加载新代码。正式切换活动权重前，应使用目标领域的查询和几何样本评估候选模型。
+第三方库、平台和几何内核差异可能影响重建成功率及浮点结果。不要把不同归档或划分文件混入同一运行目录。

@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "verifiedSamples": 505,
+  "trainSamples": 415,
+  "testSamples": 90,
+  "structureLatentShape": [
+    505,
+    8
+  ],
+  "geometryLatentShape": [
+    505,
+    8
+  ],
+  "testGeometryMseRecomputed": 0.057888176571376244,
+  "testStructureTokenBrierRecomputed": 0.004057847912498592,
+  "testStructureCountMseRecomputed": 0.020149159216043818,
+  "checks": [
+    "official split membership",
+    "source document checksums",
+    "dataset and model checksums",
+    "training-only retrieval indexes",
+    "reloaded encoding and reconstruction equality",
+    "finite outputs",
+    "recomputed held-out geometry MSE",
+    "recomputed held-out structure metrics"
+  ],
+  "environment": {
+    "python": "3.10.12",
+    "numpy": "2.2.6",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35"
+  }
+}

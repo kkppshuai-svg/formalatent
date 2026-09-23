@@ -1,0 +1,57 @@
+{
+  "format": "formalatent-source-selection-v1",
+  "searchedAt": "2026-09-23",
+  "provider": "AnySearch 3.1.1",
+  "queries": [
+    "DeepCAD dataset official CAD construction sequences license download",
+    "Fusion 360 Gallery dataset official CAD reconstruction sequences license",
+    "SketchGraphs dataset official parametric CAD sketches license",
+    "ABC dataset CAD B-rep official license",
+    "parametric CAD dataset VAE training"
+  ],
+  "candidates": [
+    {
+      "name": "DeepCAD",
+      "officialUrl": "https://www.cs.columbia.edu/cg/deepcad/",
+      "scale": "178,238 CAD models and construction sequences",
+      "representation": "sketch and extrusion construction sequences with official train/test split",
+      "decision": "selected",
+      "reason": "matches the existing structure and BREP descriptor pipeline; official archive and split were already available locally and checksum-verifiable"
+    },
+    {
+      "name": "Fusion 360 Gallery Reconstruction",
+      "officialUrl": "https://github.com/AutodeskAILab/Fusion360GalleryDataset",
+      "scale": "8,625 sequences; approximately 2.0 GB",
+      "representation": "sequential sketch and extrude designs",
+      "decision": "deferred",
+      "reason": "relevant, but requires a separate Fusion 360 reconstruction conversion path and a new 2 GB download"
+    },
+    {
+      "name": "SketchGraphs",
+      "officialUrl": "https://github.com/PrincetonLIPS/SketchGraphs",
+      "scale": "15 million sketches; sequence file approximately 15 GB",
+      "representation": "2D geometric constraint graphs",
+      "decision": "deferred",
+      "reason": "does not provide the validated 3D STEP/BREP geometry required by the current dual-VAE audit; original sketch copyright remains with creators"
+    },
+    {
+      "name": "ABC Dataset",
+      "officialUrl": "https://deep-geometry.github.io/abc-dataset/",
+      "scale": "1 million CAD models",
+      "representation": "B-Rep geometry",
+      "decision": "deferred",
+      "reason": "useful for geometry pretraining, but lacks the construction-sequence labels used by the current structure VAE"
+    }
+  ],
+  "selectedRun": {
+    "dataset": "DeepCAD",
+    "candidateCount": 530,
+    "acceptedTrain": 415,
+    "acceptedTest": 90,
+    "acceptedTotal": 505,
+    "geometryFailures": 6,
+    "descriptorDuplicatesRemoved": 19,
+    "selectionSeed": 20260923,
+    "trainingSeed": 42
+  }
+}
