@@ -1,6 +1,6 @@
 # 文本结构神经 VAE
 
-[返回首页](../README.md)
+[中文首页](../README.zh-CN.md) · [English](../README.md)
 
 ## 模型与边界
 

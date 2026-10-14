@@ -1,6 +1,6 @@
 # 验证与能力边界
 
-[返回首页](../README.md) · [评估报告](evaluation.md) · [DeepCAD 训练记录](deepcad-training.md)
+[中文首页](../README.zh-CN.md) · [English](../README.md) · [评估报告](evaluation.md) · [DeepCAD 训练记录](deepcad-training.md)
 
 ## 项目职责
 

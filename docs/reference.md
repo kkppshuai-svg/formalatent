@@ -1,6 +1,6 @@
 # 接口与数据格式
 
-[返回首页](../README.md) · [使用指南](usage.md)
+[中文首页](../README.zh-CN.md) · [English](../README.md) · [使用指南](usage.md)
 
 ## 训练命令
 

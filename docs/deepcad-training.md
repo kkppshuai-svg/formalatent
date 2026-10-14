@@ -1,6 +1,6 @@
 # DeepCAD 505 组外部样本训练记录
 
-[返回首页](../README.md) · [结构神经 VAE](structure-vae.md)
+[中文首页](../README.zh-CN.md) · [English](../README.md) · [结构神经 VAE](structure-vae.md)
 
 本记录描述 2026-09-23 完成的数据源检索、样本筛选、双 VAE 训练、独立测试、重载审计和 AI-CAD 部署。公开仓库只保存处理代码、来源记录、汇总指标和哈希，不分发原始样本或模型权重。
 

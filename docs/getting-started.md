@@ -1,6 +1,6 @@
 # 快速开始
 
-[返回首页](../README.md) · [使用指南](usage.md) · [接口参考](reference.md)
+[中文首页](../README.zh-CN.md) · [English](../README.md) · [使用指南](usage.md) · [接口参考](reference.md)
 
 本页提供无需 STEP 文件的最小训练与推理示例。示例验证调用流程；处理真实 CAD 数据时，应继续阅读数据准备和验证范围。
 
