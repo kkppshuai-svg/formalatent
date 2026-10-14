@@ -2,9 +2,9 @@
 
 **面向 CAD 几何与结构的潜空间学习、描述重建和相似检索。**
 
-[English](README.md) · [快速开始](docs/getting-started.md) · [使用指南](docs/usage.md) · [接口参考](docs/reference.md) · [验证与边界](docs/validation.md) · [贡献规范](CONTRIBUTING.md)
+[English](README.md) · [快速开始](docs/getting-started.md) · [技术栈](docs/tech-stack.md) · [使用指南](docs/usage.md) · [接口参考](docs/reference.md) · [验证与边界](docs/validation.md) · [贡献规范](CONTRIBUTING.md)
 
-FormaLatent 将 STEP 几何统计或结构标签编码为潜空间向量，用于组织 CAD 样本、查询相似零件及评估描述重建。核心使用 Python 与 NumPy，可独立于 AI-CAD Web 服务运行；STEP 特征提取依赖 CadQuery/OpenCascade。
+FormaLatent 使用可训练的神经 VAE，将 STEP 几何统计或结构标签编码为潜空间向量，用于组织 CAD 样本、查询相似零件及评估描述重建。核心使用 Python 与 NumPy，可独立于 AI-CAD Web 服务运行；STEP 特征提取依赖 CadQuery/OpenCascade。
 
 ![FormaLatent 的几何与结构双通道，以及各自的检索和描述重建输出](docs/assets/formalatent-overview.svg)
 
@@ -21,6 +21,34 @@ FormaLatent 将 STEP 几何统计或结构标签编码为潜空间向量，用�
 | 接入建模工作台 | 提供批量运行时、CLI 和 AI-CAD 集成入口 |
 
 几何 VAE 支持小批量 Adam、KL 权重预热、验证集早停和权重缓存。结构 VAE 学习标签与数量，保留 SVD 基线用于对照；它不等同于自然语言理解或 CAD 构造序列生成。
+
+## 技术栈
+
+| 层次 | 技术 | 职责 |
+| --- | --- | --- |
+| 核心运行时 | Python 3.10+ | 训练、CLI 与批量推理 |
+| 神经网络计算 | NumPy ≥1.24,<3 | 全连接权重矩阵、非线性前向、显式梯度和 Adam |
+| STEP 特征提取 | CadQuery ≥2.4,<3 / OpenCascade | 可选的原生几何描述提取 |
+| 模型与数据 | JSON、JSONL、NumPy NPZ | 模型参数、样本记录及实验数组 |
+| 测试验证 | pytest ≥7,<10 | 训练、schema、运行时、CLI 及回归检查 |
+| AI-CAD 接入 | JavaScript ES modules / Node.js | 结构模型后验均值推理及集成核对 |
+
+Python 与 NumPy 构成独立核心，几何依赖、测试依赖和工作台接入分别管理。依赖清单、源码入口及职责边界见[技术栈与模块关系](docs/tech-stack.md)。
+
+## 神经网络与矩阵
+
+几何 VAE 和结构 VAE 都是全连接神经网络，具有可学习的权重矩阵、tanh 激活、高斯后验分支、重参数采样、显式反向传播和 Adam 更新。NumPy 执行矩阵运算；SVD 是独立的非神经对照。
+
+![几何 VAE 的权重矩阵、后验分支和批量张量形状](docs/assets/neural-matrices.svg)
+
+已记录的几何配置中，批量前向路径为 `X[N,44] → H1[N,64] → {mu[N,8], logvar[N,8]} → Z[N,8] → H2[N,64] → 描述重建[N,44]`。
+
+| 已记录配置 | 编码矩阵 | 后验矩阵 | 解码矩阵 | 可训练参数总数 |
+| --- | --- | --- | --- | ---: |
+| 几何 VAE | 44 × 64 | 两个 64 × 8 矩阵 | 8 × 64、64 × 44 | 7,356 |
+| 结构 VAE | 23 × 128 | 两个 128 × 8 矩阵 | 8 × 128、128 × 23 | 9,255 |
+
+参数总数包含偏置。前向公式、损失、预处理及实际模型矩阵查看命令见[神经网络与矩阵计算](docs/neural-network.md)。
 
 ## 快速开始
 

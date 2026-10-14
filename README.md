@@ -2,9 +2,9 @@
 
 **Latent representations, descriptor reconstruction, and similarity search for CAD geometry and structure.**
 
-[简体中文](README.zh-CN.md) · [Getting started](docs/getting-started.en.md) · [Reference (中文)](docs/reference.md) · [Validation (中文)](docs/validation.md) · [Contributing (中文)](CONTRIBUTING.md)
+[简体中文](README.zh-CN.md) · [Getting started](docs/getting-started.en.md) · [Tech stack](docs/tech-stack.en.md) · [Reference (中文)](docs/reference.md) · [Validation (中文)](docs/validation.md) · [Contributing (中文)](CONTRIBUTING.md)
 
-FormaLatent encodes geometric descriptors or structural tags into latent vectors. It provides NumPy-based training, batched inference, descriptor reconstruction, and sample retrieval, independently of the AI-CAD web service. STEP feature extraction uses CadQuery/OpenCascade.
+FormaLatent uses trainable neural VAEs to encode geometric descriptors or structural tags into latent vectors. It provides NumPy-based training, batched inference, descriptor reconstruction, and sample retrieval, independently of the AI-CAD web service. STEP feature extraction uses CadQuery/OpenCascade.
 
 ![Separate geometry and structure representation pipelines](docs/assets/formalatent-overview.en.svg)
 
@@ -17,6 +17,34 @@ The geometry and structure VAEs are trained separately. The recorded DeepCAD run
 - Cached batch encoding, posterior parameters, decoding, reconstruction, and mixed latent/descriptor retrieval.
 - A separate structural VAE for tags and counts, with an SVD baseline.
 - CLI, Python runtime, and AI-CAD integration entry points.
+
+## Technology stack
+
+| Layer | Technology | Responsibility |
+| --- | --- | --- |
+| Core runtime | Python 3.10+ | Training, CLI, and batch inference |
+| Neural computation | NumPy ≥1.24,<3 | Dense weight matrices, nonlinear forward passes, explicit gradients, and Adam |
+| STEP features | CadQuery ≥2.4,<3 / OpenCascade | Optional native geometry extraction |
+| Model and data formats | JSON, JSONL, NumPy NPZ | Model parameters, sample records, and experiment arrays |
+| Verification | pytest ≥7,<10 | Training, schema, runtime, CLI, and regression checks |
+| AI-CAD integration | JavaScript ES modules / Node.js | Deterministic structural posterior-mean inference and integration checks |
+
+Python and NumPy are the standalone core; CAD, testing, and workbench integration are separate layers. See [technology stack and module map](docs/tech-stack.en.md) for dependency files and source entry points.
+
+## Neural architecture and matrices
+
+The VAEs are fully connected neural networks with learned weight matrices, tanh activations, Gaussian posterior branches, reparameterized sampling, explicit backpropagation, and Adam updates. NumPy performs the matrix operations; SVD is a separate non-neural baseline.
+
+![Geometry VAE forward pass with learned matrices and batch shapes](docs/assets/neural-matrices.en.svg)
+
+For the recorded geometry configuration, a batch follows `X[N,44] → H1[N,64] → {mu[N,8], logvar[N,8]} → Z[N,8] → H2[N,64] → reconstructed descriptors[N,44]`.
+
+| Recorded configuration | Encoder matrix | Posterior matrices | Decoder matrices | Trainable parameters |
+| --- | --- | --- | --- | ---: |
+| Geometry VAE | 44 × 64 | Two 64 × 8 matrices | 8 × 64, 64 × 44 | 7,356 |
+| Structure VAE | 23 × 128 | Two 128 × 8 matrices | 8 × 128, 128 × 23 | 9,255 |
+
+Counts include biases. See [neural networks and matrix operations](docs/neural-network.en.md) for forward equations, losses, preprocessing, and an actual saved-model matrix inspection command.
 
 ## Minimal example
 

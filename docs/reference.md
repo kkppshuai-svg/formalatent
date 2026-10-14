@@ -77,6 +77,8 @@ score = (1 - w) * latent_distance / sqrt(L) + w * geometry_distance
 
 ## 模型文件
 
+`weights` 包含五个权重矩阵及五个偏置向量，属于可训练神经网络参数。各配置下的形状、前向公式和实际参数查看命令见[神经网络与矩阵计算](neural-network.md)。
+
 | 字段 | 内容 |
 | --- | --- |
 | `format` | `ai-cad-brep-vae-v2` |
