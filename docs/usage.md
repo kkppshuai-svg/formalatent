@@ -2,6 +2,8 @@
 
 [返回首页](../README.md) · [接口参考](reference.md)
 
+首次使用可先运行[跨平台合成示例](getting-started.md)。真实 CAD 输入和历史指标的适用范围见[验证与边界](validation.md)。
+
 ## 数据准备
 
 训练输入采用 UTF-8 JSONL，每行一个样本。最小记录如下：

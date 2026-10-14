@@ -1,0 +1,45 @@
+{
+  "kind": "executed-synthetic-workflow",
+  "scope": "Numerical CLI demonstration, not CAD accuracy or unseen-part retrieval evaluation",
+  "dataset": {
+    "samples": 32,
+    "inputDimensions": 3,
+    "seed": 42,
+    "generator": "examples/create_demo_dataset.py"
+  },
+  "training": {
+    "latentDimensions": 2,
+    "hiddenDimensions": 16,
+    "maximumEpochs": 100,
+    "seed": 42,
+    "metrics": {
+      "reconstructionMse": 0.299578985132577,
+      "klLoss": 1.6105735139122648,
+      "validationLoss": 0.2544714845358518
+    }
+  },
+  "outputs": {
+    "queryShape": [
+      2,
+      3
+    ],
+    "latentShape": [
+      2,
+      2
+    ],
+    "reconstructedShape": [
+      2,
+      3
+    ],
+    "allOutputsFinite": true,
+    "matchesPerQuery": [
+      3,
+      3
+    ],
+    "firstMatchIds": [
+      "demo-0",
+      "demo-1"
+    ]
+  },
+  "interpretation": "Queries are drawn from the synthetic sample table; nearest identity matches do not establish generalization."
+}
