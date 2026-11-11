@@ -10,6 +10,7 @@
 | Geometry extraction | CadQuery ≥2.4,<3 / OpenCascade | [requirements-cad.txt](../requirements-cad.txt) | STEP/BRep ingestion and geometric statistics |
 | Development checks | pytest ≥7,<10 plus core/CAD dependencies | [requirements-dev.txt](../requirements-dev.txt) | Training, data, geometry, and runtime regression checks |
 | AI-CAD integration | JavaScript ES modules / Node.js | [Integration directory](../integrations/ai-cad) | Structural posterior-mean inference, verification, and integration patch |
+| AI-CAD joint completion | PyTorch ≥2.2,<3, Node.js, CadQuery | [Graph dependencies](../requirements-graph.txt) · [CAD dependencies](../requirements-cad.txt) | AI-CAD graph export, candidate ranking, part replay, and sampled motion checks |
 
 Numerical training and queries use only Python and NumPy. Install CAD dependencies for STEP inputs. OpenCascade is supplied through CadQuery's geometry bindings; this repository does not separately pin OCCT. The development requirements include the CAD dependencies.
 
@@ -17,7 +18,7 @@ JavaScript is an optional workbench integration layer. Its runtime computes dete
 
 ## Neural implementation
 
-The VAEs use NumPy arrays and matrix multiplication, five dense weight matrices, five bias vectors, tanh activations, and Gaussian posterior branches. Training uses reparameterized sampling, explicit chain-rule gradients, and Adam updates.
+The descriptor and structure-tag VAEs use NumPy arrays and matrix multiplication, five dense weight matrices, five bias vectors, tanh activations, and Gaussian posterior branches. Training uses reparameterized sampling, explicit chain-rule gradients, and Adam updates.
 
 These are trainable neural networks implemented in NumPy. The core requirements declare no additional deep-learning framework. SVD is a separate non-neural baseline. See [matrix operations](neural-network.en.md) for actual shapes, parameter counts, equations, and saved-model inspection.
 
@@ -34,10 +35,12 @@ These are trainable neural networks implemented in NumPy. The core requirements 
 | [run_training_experiment.py](../scripts/run_training_experiment.py) | Dual-model experiments, NPZ outputs, and held-out metrics |
 | [structure-vae-runtime.mjs](../integrations/ai-cad/structure-vae-runtime.mjs) | JavaScript structural posterior-mean inference |
 | [verify-model.mjs](../integrations/ai-cad/verify-model.mjs) | Workbench integration verification |
+| [run_mechanism_feedback.py](../scripts/run_mechanism_feedback.py) | Graph VAE training, family-held-out evaluation, and checkpoint export |
+| [complete_aicad_joint.py](../scripts/complete_aicad_joint.py) | Rank and replay joint candidates, then export the verified plan JSON |
 
 ## Formats and project boundaries
 
-Samples use UTF-8 JSONL. Model weights and metadata use JSON; experiment arrays can use compressed NumPy NPZ. Trainable matrices, normalization statistics, vocabularies, sample indexes, and evaluation metrics serve separate roles.
+Samples use UTF-8 JSONL. The NumPy models use JSON, and the joint completion model uses a PyTorch `.pt` checkpoint. Experiment arrays can use compressed NumPy NPZ. Trainable matrices, normalization statistics, vocabularies, sample indexes, and evaluation metrics serve separate roles.
 
 DeepCAD is an experiment data source, not a required runtime component. Python, model formats, and experiment inputs have independent versions.
 

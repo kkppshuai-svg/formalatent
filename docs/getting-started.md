@@ -83,6 +83,17 @@ python scripts/extract_brep_geometry.py --step path/to/part.step
 
 需要准备多样本清单，批量提取几何 JSONL，并使用内置 44 维 schema 训练模型，之后才能执行 STEP 查询。完整流程见[使用指南](usage.md)。三维合成模型不兼容 STEP 查询。
 
+## 补全 AI-CAD 关节
+
+把 AI-CAD 与 FormaLatent 克隆到同一父目录，并准备 Node.js、PyTorch 和 CadQuery。在 FormaLatent 目录生成示例和训练权重。
+
+```bash
+python -m pip install -r requirements-graph.txt -r requirements-cad.txt
+python scripts/run_mechanism_feedback.py --out-dir data/mechanism-feedback
+```
+
+准备包含装配 `plan` 和运动目标 `probe` 的 JSON 后，使用 `complete_aicad_joint.py` 补全一个转动或滑动关节的子零件。输入示例、输出参数和验证结果见[关节补全指南](mechanism-feedback.md#补全一个关节端点)。
+
 ## 验证安装
 
 ```bash

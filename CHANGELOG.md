@@ -2,6 +2,12 @@
 
 本文件记录实现行为。实现版本与模型文件格式分别管理；本记录不表示已发布 Git 标签或软件包。
 
+## AI-CAD 关节补全 — 2026-11-11
+
+- 增加结构图 VAE 的关节端点排序和按家族留出的评估。
+- 提供可重放的机构示例，使用 CadQuery 验证连接结构、目标运动和采样位置的干涉。
+- 新增 `complete_aicad_joint.py` 离线命令，依序验证前三个候选并输出首个通过的方案。 [使用指南](docs/mechanism-feedback.md)
+
 ## AnySearch 505 组训练与 AI-CAD 部署 — 2026-09-23
 
 - 通过 AnySearch 比较 DeepCAD、Fusion 360 Gallery、SketchGraphs 与 ABC Dataset，保存可追溯的数据源选择记录。

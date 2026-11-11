@@ -2,7 +2,7 @@
 
 [Overview](../README.md) · [中文指南](getting-started.md) · [Reference (中文)](reference.md)
 
-This walkthrough trains and queries a small numerical model without STEP files. It verifies the CLI workflow, not CAD accuracy or unseen-part retrieval.
+This walkthrough starts with a small NumPy descriptor model and also covers the offline AI-CAD joint completion workflow. The numerical example exercises the training and query CLI on synthetic descriptors.
 
 ## Requirements and installation
 
@@ -58,6 +58,23 @@ python scripts/query_brep_vae.py --model models/geometry-vae.json --step path/to
 ```
 
 Full dataset and fine-tuning instructions remain available in the [Chinese usage guide](usage.md). Feature names, order, and dimensions must agree between training and inference. Decode outputs are descriptors, not complete solids.
+
+## AI-CAD joint completion
+
+Keep an [AI-CAD checkout](https://github.com/kkppshuai-svg/ai-cad) next to FormaLatent or pass its location as `--ai-cad`. Install Node.js and the Python dependencies. Train a PyTorch graph VAE on generated mechanism plans.
+
+```bash
+python -m pip install -r requirements-graph.txt -r requirements-cad.txt
+python scripts/run_mechanism_feedback.py --out-dir data/mechanism-feedback
+```
+
+Prepare a JSON file with the AI-CAD `plan` and a motion `probe`. Omit the `child` of one revolute or prismatic joint. Supply the joint ID, the intended moving and stationary parts, and the target axis, pivot, and travel in the probe. The [joint completion guide (中文)](mechanism-feedback.md) includes a working draft example.
+
+```bash
+python scripts/complete_aicad_joint.py --model data/mechanism-feedback/vae-with-feedback.pt --input data/mechanism-feedback/joint-draft.json --plan-out data/mechanism-feedback/completed-plan.json
+```
+
+This offline command ranks candidate endpoints with the graph VAE and checks up to three through CadQuery replay and motion at four sampled positions. It writes the completed plan JSON for the first candidate that passes. If all candidates fail, the result is `no_pass` with exit code 2. The check assumes a single driven joint, rigid parts, and a world-aligned rest pose.
 
 ## Run checks
 

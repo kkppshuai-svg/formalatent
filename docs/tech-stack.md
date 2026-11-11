@@ -10,6 +10,7 @@
 | 几何提取 | CadQuery ≥2.4,<3，底层 OpenCascade | [requirements-cad.txt](../requirements-cad.txt) | STEP/BRep 读取、拓扑与几何统计 |
 | 开发测试 | pytest ≥7,<10，加上核心与 CAD 依赖 | [requirements-dev.txt](../requirements-dev.txt) | 训练、数据、几何和运行时回归检查 |
 | 上游工作台集成 | JavaScript ES modules、Node.js | [AI-CAD 集成目录](../integrations/ai-cad) | 结构 VAE 后验均值推理、模型加载核对和接入补丁 |
+| AI-CAD 关节补全 | PyTorch ≥2.2,<3、Node.js、CadQuery | [结构图依赖](../requirements-graph.txt) · [CAD 依赖](../requirements-cad.txt) | 调用 AI-CAD 结构图导出与零件构建器，排序候选并验证采样运动 |
 
 核心训练和数值查询只依赖 Python 与 NumPy；读取 STEP 时再安装 CAD 依赖。OpenCascade 由 CadQuery 的几何绑定提供，仓库未在依赖清单中单独固定 OCCT 版本。`requirements-dev.txt` 包含 CAD 依赖，因此完整测试环境比纯数值运行环境更完整。
 
@@ -17,7 +18,7 @@ JavaScript 模块用于 AI-CAD 接入，不是独立 Python 核心的必需运�
 
 ## 神经网络实现
 
-几何及结构 VAE 使用 NumPy `ndarray` 与 `@` 矩阵乘法，包含五个全连接权重矩阵、五个偏置向量、tanh 激活和高斯后验分支。训练时执行重参数采样、显式链式梯度和 Adam 更新。
+几何描述和结构标签 VAE 使用 NumPy `ndarray` 与 `@` 矩阵乘法，包含五个全连接权重矩阵、五个偏置向量、tanh 激活和高斯后验分支。训练时执行重参数采样、显式链式梯度和 Adam 更新。
 
 这是用 NumPy 实现的可训练神经网络，核心依赖清单没有额外的深度学习框架。SVD 是单独保留的非神经基线。矩阵形状、参数数量、损失公式和实际权重查看方法见[神经网络与矩阵计算](neural-network.md)。
 
@@ -34,10 +35,12 @@ JavaScript 模块用于 AI-CAD 接入，不是独立 Python 核心的必需运�
 | [run_training_experiment.py](../scripts/run_training_experiment.py) | 双模型实验、NPZ 产物及独立测试指标 |
 | [structure-vae-runtime.mjs](../integrations/ai-cad/structure-vae-runtime.mjs) | JavaScript 结构后验均值推理 |
 | [verify-model.mjs](../integrations/ai-cad/verify-model.mjs) | AI-CAD 接入的模型核对入口 |
+| [run_mechanism_feedback.py](../scripts/run_mechanism_feedback.py) | 结构图训练、家族留出评估与 PyTorch 权重保存 |
+| [complete_aicad_joint.py](../scripts/complete_aicad_joint.py) | 关节端点候选排序与重放，输出通过检查的方案 JSON |
 
 ## 数据与模型
 
-训练样本使用 UTF-8 JSONL，几何模型及结构模型参数使用 JSON。实验批量编码和重建可保存为压缩 NPZ。`weights` 包含可训练矩阵及偏置；归一化统计、词表、样本索引和指标分别保存。
+训练样本使用 UTF-8 JSONL，NumPy 模型参数使用 JSON，关节补全模型使用 PyTorch `.pt` 权重。实验批量编码和重建可保存为压缩 NPZ。`weights` 包含可训练矩阵及偏置；归一化统计、词表、样本索引和指标分别保存。
 
 DeepCAD 是已有实验的数据来源，不是所有运行场景必需的组件。数据、模型格式与依赖版本有不同生命周期，不能仅凭同一模型格式认定两个实验可直接比较。
 

@@ -32,6 +32,20 @@ python scripts/vae_cli.py {encode,decode,reconstruct,search}
 
 `--model` 和 `--input` 必填。未指定 `--out` 时输出 JSON 到标准输出。`encode`、`reconstruct` 与 `search` 接收形状为 `(N, inputDim)` 的数组；`decode` 接收 `(N, latentDim)` 的数组。检索参数仅用于 `search`。
 
+## AI-CAD 关节补全 CLI
+
+```text
+python scripts/complete_aicad_joint.py
+    --model CHECKPOINT.pt --input DRAFT.json --plan-out COMPLETED.json
+    [--ai-cad PATH]
+```
+
+模型使用 `run_mechanism_feedback.py` 生成的 `ai-cad-masked-graph-vae-v1` 权重。`--ai-cad` 指向 AI-CAD 仓库，默认查找 FormaLatent 的同级目录。
+
+输入包含 `plan` 和 `probe`。在 `plan.joints` 保留待补全关节的 `id`、`parent`、`type`、`axis` 和 `origin`，省略子零件 `child`。由 `probe` 提供关节 ID、运动零件、静止零件、轴、枢轴和非零行程。输入格式和单位见[草稿示例](mechanism-feedback.md#补全一个关节端点)。
+
+标准输出为 JSON，包含 `status`、`jointId`、`selectedChild` 及各候选的验证结果。成功时返回 `completed`，退出码为 0，并写入补全后的方案。前三个候选均未通过时返回 `no_pass`，退出码为 2，本次调用不写入方案。
+
 ## Python API
 
 从仓库根目录设置 `PYTHONPATH=scripts`，再运行调用代码：
