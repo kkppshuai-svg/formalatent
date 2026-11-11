@@ -1,5 +1,9 @@
 # 文本结构神经 VAE
 
+双轮廓切除引用的训练与干预示例见[结构干预实验](structure-intervention-demo.md)。
+结构引用图和潜空间对齐实验见[结构引用图实验](structural-graph-vae.md)。
+AI-CAD 本机结构图采集、训练和留出评估见[AI-CAD 结构图训练](aicad-graph-training.md)。
+
 [中文首页](../README.zh-CN.md) · [English](../README.md)
 
 ## 模型与边界

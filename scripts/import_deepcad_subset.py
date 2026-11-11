@@ -115,6 +115,55 @@ def build_shape_from_document(document):
     return body.clean()
 
 
+def replay_document_bodies(document, *, trace=None):
+    """Replay separate bodies, with explicit targets for ambiguous Booleans."""
+    bodies = {}
+    boolean_methods = {
+        "JoinFeatureOperation": "fuse",
+        "CutFeatureOperation": "cut",
+        "IntersectFeatureOperation": "intersect",
+    }
+    for item in document["sequence"]:
+        if item.get("type") != "ExtrudeFeature":
+            continue
+        feature_id = item["entity"]
+        entity = document["entities"][feature_id]
+        operation = entity["operation"]
+        tool = extruded_shape(document, entity)
+        if tool is None:
+            raise ValueError(f"{feature_id}: missing extrusion profiles")
+        if operation == "NewBodyFeatureOperation":
+            if feature_id in bodies:
+                raise ValueError(f"{feature_id}: duplicate body identifier")
+            target = feature_id
+            result = tool
+        else:
+            if operation not in boolean_methods:
+                raise ValueError(f"{feature_id}: unsupported operation {operation}")
+            target = entity.get("targetBody")
+            if target is None and len(bodies) == 1:
+                target = next(iter(bodies))
+            if not isinstance(target, str) or target not in bodies:
+                raise ValueError(f"{feature_id}: targetBody must identify an existing body")
+            result = getattr(bodies[target], boolean_methods[operation])(tool)
+        result = result.clean()
+        if not result.isValid() or len(result.Solids()) != 1 or result.Volume() <= 0:
+            raise ValueError(f"{feature_id}: replay must produce one valid solid per body")
+        if trace is not None:
+            previous = bodies.get(target)
+            trace.append({
+                "feature": feature_id,
+                "operation": operation,
+                "body": target,
+                "volumeBefore": float(previous.Volume()) if previous is not None else 0.0,
+                "volumeAfter": float(result.Volume()),
+            })
+        bodies[target] = result
+    if not bodies:
+        raise ValueError("document contains no extrude operations")
+    return bodies
+
+
 def build_step_from_document(document, output_path):
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
