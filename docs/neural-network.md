@@ -1,6 +1,6 @@
 # 神经网络与矩阵计算
 
-[中文首页](../README.zh-CN.md) · [English](neural-network.en.md) · [接口参考](reference.md)
+[中文首页](../README.md) · [English](neural-network.en.md) · [接口参考](reference.md)
 
 FormaLatent 的几何 VAE 和结构 VAE 都是可训练的全连接神经网络。实现采用 NumPy 矩阵乘法、非线性激活、显式反向传播与 Adam 更新，包含高斯后验均值/对数方差分支、重参数采样及 KL 正则项。SVD 是独立保留的非神经基线。
 

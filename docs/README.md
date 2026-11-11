@@ -1,6 +1,6 @@
 # FormaLatent documentation / 文档中心
 
-[English overview](../README.md) · [中文首页](../README.zh-CN.md)
+[English overview](../README.en.md) · [中文首页](../README.md)
 
 | Topic / 主题 | English | 中文 |
 | --- | --- | --- |

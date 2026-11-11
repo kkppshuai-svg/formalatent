@@ -1,6 +1,6 @@
 # 技术栈与模块关系
 
-[中文首页](../README.zh-CN.md) · [English](tech-stack.en.md) · [神经网络矩阵](neural-network.md)
+[中文首页](../README.md) · [English](tech-stack.en.md) · [神经网络矩阵](neural-network.md)
 
 ## 分层依赖
 

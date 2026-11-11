@@ -1,6 +1,6 @@
 # Technology stack and module map
 
-[Overview](../README.md) · [中文](tech-stack.md) · [Neural matrices](neural-network.en.md)
+[Overview](../README.en.md) · [中文](tech-stack.md) · [Neural matrices](neural-network.en.md)
 
 ## Dependency layers
 

@@ -1,6 +1,6 @@
 # Neural networks and matrix operations
 
-[Overview](../README.md) · [中文](neural-network.md) · [Reference (中文)](reference.md)
+[Overview](../README.en.md) · [中文](neural-network.md) · [Reference (中文)](reference.md)
 
 Both the geometry and structure VAEs are trainable fully connected neural networks implemented in NumPy. They use matrix multiplication, nonlinear activations, explicit backpropagation, Adam, Gaussian posterior branches, reparameterized sampling, and KL regularization. The retained SVD baseline is separate and non-neural.
 

@@ -1,6 +1,6 @@
 # Getting started
 
-[Overview](../README.md) · [中文指南](getting-started.md) · [Reference (中文)](reference.md)
+[Overview](../README.en.md) · [中文指南](getting-started.md) · [Reference (中文)](reference.md)
 
 This walkthrough starts with a small NumPy descriptor model and also covers the offline AI-CAD joint completion workflow. The numerical example exercises the training and query CLI on synthetic descriptors.
 

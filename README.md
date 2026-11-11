@@ -1,27 +1,27 @@
-# FormaLatent
+# FormaLatent · 形潜
 
-**Neural representations, similarity search, and joint completion for CAD.**
+**面向 CAD 几何与结构的神经表征、相似检索与关节补全。**
 
-[简体中文](README.zh-CN.md) · [Getting started](docs/getting-started.en.md) · [Documentation](docs/README.md)
+[English](README.en.md) · [快速开始](docs/getting-started.md) · [文档中心](docs/README.md)
 
-Train NumPy VAEs to encode CAD descriptors, reconstruct features, and retrieve similar samples independently of the AI-CAD workbench. The AI-CAD joint completion workflow uses a PyTorch graph VAE to rank candidate endpoints and verifies them through CAD replay and sampled motion.
+使用 NumPy VAE 编码 CAD 描述、重建特征并检索相似样本。这条流程可独立运行。AI-CAD 关节补全流程使用 PyTorch 结构图 VAE 排序，由 CadQuery 重放并检查候选。
 
-![Geometry and structure representation pipelines](docs/assets/formalatent-overview.en.svg)
+![几何与结构双通道](docs/assets/formalatent-overview.svg)
 
-## Features
+## 功能
 
-- Geometry and structure VAEs with learned matrices, Adam, and batch inference.
-- STEP descriptors through CadQuery/OpenCascade; mixed latent/descriptor retrieval.
-- Training, fine-tuning, encoding, decoding, and search through Python and CLI.
-- Offline completion of one revolute or prismatic joint in an AI-CAD plan. The CLI checks up to three ranked candidates and writes a completed plan JSON when a candidate passes.
+- 几何与结构神经 VAE：可学习矩阵、Adam 和批量推理。
+- CadQuery/OpenCascade 提取 STEP 描述，支持潜空间与描述混合检索。
+- Python 和 CLI 提供训练、微调、编码、解码及查询。
+- [AI-CAD 关节补全](docs/mechanism-feedback.md#补全一个关节端点)根据现有装配结构对候选子零件排序，验证前三名并输出通过检查的方案 JSON。离线命令一次处理一个转动或滑动关节。
 
-The NumPy VAEs decode to descriptors. Raw datasets and pretrained weights are not distributed.
+几何 VAE 的解码输出为统计描述。仓库提供关节补全的训练脚本和可生成的机构示例。
 
-**Stack:** Python and NumPy for descriptor workflows. CadQuery/OpenCascade for STEP extraction and replay. PyTorch and Node.js for AI-CAD joint completion. [Details](docs/tech-stack.en.md)
+**技术栈：** Python · NumPy · CadQuery/OpenCascade · PyTorch 与 Node.js（关节补全）。[详细说明](docs/tech-stack.md)
 
-## Quick start
+## 快速开始
 
-Python 3.10+. The synthetic example requires only NumPy:
+Python 3.10+，合成示例只需 NumPy：
 
 ```bash
 git clone https://github.com/kkppshuai-svg/formalatent.git
@@ -32,16 +32,14 @@ python scripts/train_brep_vae.py --dataset data/demo/geometry.jsonl --out models
 python scripts/vae_cli.py search --model models/demo.json --input data/demo/query.json --limit 3
 ```
 
-For environment setup, STEP inputs, and encoding/decoding, see [Getting started](docs/getting-started.en.md).
+环境配置、STEP 输入和编码/解码见[快速开始](docs/getting-started.md)。
 
-To train the graph VAE and complete a joint, see [AI-CAD joint completion](docs/getting-started.en.md#ai-cad-joint-completion).
+## 文档
 
-## Documentation
+- [CLI 与 Python API](docs/reference.md)
+- [神经网络与矩阵](docs/neural-network.md)
+- [AI-CAD 结构图训练](docs/aicad-graph-training.md) · [关节补全操作与评估](docs/mechanism-feedback.md)
+- [DeepCAD 实验记录](docs/deepcad-training.md) · [验证边界](docs/validation.md)
+- [贡献规范](CONTRIBUTING.md) · [问题反馈](https://github.com/kkppshuai-svg/formalatent/issues)
 
-- [CLI and Python API (中文)](docs/reference.md)
-- [Neural architecture and matrices](docs/neural-network.en.md)
-- [Joint completion experiments and motion verification (中文)](docs/mechanism-feedback.md)
-- [Recorded DeepCAD evaluation (中文)](docs/deepcad-training.md) · [Validation scope (中文)](docs/validation.md)
-- [Contributing (中文)](CONTRIBUTING.md) · [Issues](https://github.com/kkppshuai-svg/formalatent/issues)
-
-Originates from [AI-CAD](https://github.com/kkppshuai-svg/ai-cad). No standalone license text is currently included; see the [project statements](docs/README.md#project-statements).
+源自 [AI-CAD](https://github.com/kkppshuai-svg/ai-cad)。仓库尚未附独立许可证文本，见[项目声明](docs/README.md#project-statements)。
