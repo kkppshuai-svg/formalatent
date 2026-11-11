@@ -8,6 +8,7 @@ except ImportError:
 if torch is not None:
     from structural_graph_cli import graph_references
     from structural_graph_vae import ReferenceGraphVAE, training_loss
+    from train_aicad_graph_vae import joint_completion_case, masked_cases
 
 
 @unittest.skipIf(torch is None, 'PyTorch is not installed')
@@ -41,6 +42,20 @@ class GraphVaeTests(unittest.TestCase):
                            {'from': 'op', 'to': '1', 'type': 'uses_profile'}]}
         with self.assertRaisesRegex(ValueError, 'one known profile'):
             graph_references(graph, 3)
+
+    def test_joint_completion_uses_same_candidates_as_masked_training(self):
+        known = {'from': 'part:0', 'to': 'part:1', 'kind': 'joint', 'type': 'revolute'}
+        hidden = {**known, 'to': 'part:2'}
+        graph = {'format': 'ai-cad-structure-graph-v1',
+                 'nodes': [{'id': f'part:{i}', 'kind': 'part'} for i in range(4)],
+                 'edges': [known, hidden]}
+        training = next(case for case in masked_cases({'id': 'test', 'family': 'test', 'structureGraph': graph})
+                        if case.task == 'joint_destination' and case.target == 2)
+        draft = joint_completion_case({**graph, 'edges': [known]}, 'part:0', 'revolute')
+        self.assertIsNone(draft.target)
+        self.assertEqual(draft.candidates, (2, 3))
+        for field in ('nodes', 'edges', 'anchors', 'context', 'candidates'):
+            self.assertEqual(getattr(draft, field), getattr(training, field))
 
 
 if __name__ == '__main__':

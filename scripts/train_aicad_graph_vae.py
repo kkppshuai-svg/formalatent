@@ -20,15 +20,15 @@ class Case:
     nodes: list
     edges: list
     anchors: tuple
-    target: str | int
+    target: str | int | None
     context: tuple
     orders: list
     node_ids: list
     candidates: tuple = ()
+    hard_negatives: tuple = ()
 
 
-def masked_cases(row):
-    graph = row['structureGraph']
+def graph_arrays(graph):
     if graph['format'] != 'ai-cad-structure-graph-v1':
         raise ValueError('unsupported AI-CAD graph format')
     nodes = graph['nodes']
@@ -42,8 +42,34 @@ def masked_cases(row):
                for i, node in enumerate(nodes)]
     edges = list(dict.fromkeys((by_id[e['from']], by_id[e['to']], e['kind'], e.get('type', ''))
                                for e in graph['edges']))
+    return symbols, edges, orders, node_ids
+
+
+def part_candidates(symbols, edges, source, kind, label):
+    connected = {to for frm, to, edge_kind, edge_type in edges
+                 if frm == source and edge_kind == kind and edge_type == label}
+    return tuple(i for i, (node_kind, _, _) in enumerate(symbols)
+                 if node_kind == 'part' and i != source and i not in connected)
+
+
+def joint_completion_case(graph, parent_node, joint_type, record='draft'):
+    symbols, edges, orders, node_ids = graph_arrays(graph)
+    if parent_node == 'world' and parent_node not in node_ids:
+        node_ids.append('world')
+        symbols.append(('world', '', ''))
+        orders.append(-1)
+    if parent_node not in node_ids:
+        raise ValueError('joint parent is missing from the structure graph')
+    source = node_ids.index(parent_node)
+    candidates = part_candidates(symbols, edges, source, 'joint', joint_type)
+    return Case(record, '', 'joint_destination', symbols, edges, (source, source), None,
+                ('joint_destination', symbols[source][2], joint_type), orders, node_ids, candidates)
+
+
+def masked_cases(row):
+    symbols, edges, orders, node_ids = graph_arrays(row['structureGraph'])
+    roles = [role for _, _, role in symbols]
     owners = {destination: source for source, destination, kind, _ in edges if kind == 'contains'}
-    parts = tuple(i for i, node in enumerate(nodes) if node['kind'] == 'part')
     cases = []
 
     def add(task, observed_nodes, observed_edges, anchors, target, context, candidates=()):
@@ -77,10 +103,11 @@ def masked_cases(row):
         observed = edges.copy()
         observed[i] = (source, destination, kind, '')
         add(kind, symbols, observed, (source, destination), label, context)
-        candidates = tuple(p for p in parts if p != source and p not in already_connected)
+        without_edge = edges[:i] + edges[i+1:]
+        candidates = part_candidates(symbols, without_edge, source, kind, label)
         if destination in candidates and len(candidates) >= 2:
             task = f'{kind}_destination'
-            add(task, symbols, edges[:i] + edges[i+1:], (source, source), destination,
+            add(task, symbols, without_edge, (source, source), destination,
                 (task, roles[source], label), candidates)
     return cases
 
@@ -191,6 +218,12 @@ def load_checkpoint(path):
     return model.eval()
 
 
+def save_checkpoint(model, path, dataset_sha256):
+    torch.save({'format': 'ai-cad-masked-graph-vae-v1', 'state_dict': model.state_dict(),
+                'vocabularies': model.vocabulary, 'width': model.width, 'latent': model.latent,
+                'datasetSha256': dataset_sha256}, path)
+
+
 class FrequencyBaseline:
     def __init__(self, cases):
         self.contexts = defaultdict(Counter)
@@ -205,32 +238,63 @@ class FrequencyBaseline:
         if not fallback:
             return None
         if case.candidates:
-            return max(case.candidates, key=lambda i: (
-                context[self.destination_label(case, i)], fallback[self.destination_label(case, i)]
-            ))
+            return self.rank_destinations(case)[0]
         return (context or fallback).most_common(1)[0][0] if (context or fallback) else None
+
+    def rank_destinations(self, case):
+        context, fallback = self.contexts[case.context], self.tasks[case.task]
+        if not fallback:
+            return []
+        return sorted(case.candidates, key=lambda i: (
+            context[self.destination_label(case, i)], fallback[self.destination_label(case, i)]
+        ), reverse=True)
 
     @staticmethod
     def destination_label(case, index):
         return case.nodes[index][1 if case.task == 'dependency_destination' else 2]
 
 
-def train(cases, epochs, seed, beta):
+def interleaved_order(cases, rng):
+    by_family = defaultdict(list)
+    for index, case in enumerate(cases):
+        by_family[case.family].append(index)
+    for indices in by_family.values():
+        rng.shuffle(indices)
+    families = list(by_family)
+    order = []
+    while families:
+        rng.shuffle(families)
+        order.extend(by_family[family].pop() for family in families)
+        families = [family for family in families if by_family[family]]
+    return order
+
+
+def train(cases, epochs, seed, beta, *, interleave=False, feedback_weight=0.0):
     torch.manual_seed(seed)
     rng = random.Random(seed)
     model = GraphVAE(vocabularies(cases))
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.003)
     order = list(range(len(cases)))
     for _ in range(epochs):
-        rng.shuffle(order)
+        if interleave:
+            order = interleaved_order(cases, rng)
+        else:
+            rng.shuffle(order)
         for start in range(0, len(order), 32):
             batch = [cases[i] for i in order[start:start + 32]]
             output = model(batch, sample=True)
             losses = []
+            feedback = []
             for i, case in enumerate(batch):
                 logits, labels = model.choices(case, i, output)
-                losses.append(-F.log_softmax(logits, dim=0)[labels.index(case.target)])
+                target = labels.index(case.target)
+                losses.append(-F.log_softmax(logits, dim=0)[target])
+                if feedback_weight and case.hard_negatives:
+                    negative = logits[[labels.index(label) for label in case.hard_negatives]]
+                    feedback.append(F.softplus(negative - logits[target]).mean())
             loss = torch.stack(losses).mean() + beta * output[-1]
+            if feedback:
+                loss = loss + feedback_weight * torch.stack(feedback).mean()
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -309,9 +373,7 @@ def main():
               'outOfVocabularyLabelsCountAsIncorrect': True, 'metrics': total, 'folds': results}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.model.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({'format': 'ai-cad-masked-graph-vae-v1', 'state_dict': model.state_dict(),
-                'vocabularies': model.vocabulary, 'width': model.width, 'latent': model.latent,
-                'datasetSha256': report['datasetSha256']}, args.model)
+    save_checkpoint(model, args.model, report['datasetSha256'])
     args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'records': report['records'], 'families': len(families), 'metrics': total}, indent=2))
 
